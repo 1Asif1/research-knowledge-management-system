@@ -22,6 +22,8 @@
 
 
     <modules>
+        <module>userservice</module>
+        <module>notificationservice</module>
         <module>api-gateway</module>
         <module>PaperService</module>
     </modules>
