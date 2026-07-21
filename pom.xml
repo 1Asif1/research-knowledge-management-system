@@ -24,6 +24,7 @@
     <modules>
         <module>api-gateway</module>
         <module>PaperService</module>
+        <module>AuthServiceD</module>
     </modules>
 
 </project>
