@@ -10,8 +10,8 @@ import java.util.Optional;
 
 @Repository
 public interface ReviewProcessRepository extends JpaRepository<ReviewProcess, Long> {
-    Optional<ReviewProcess> findByPaperSubmissionPaperId(Integer paperId);
-    List<ReviewProcess> findByReviewStatus(ReviewStatus reviewStatus);
-    List<ReviewProcess> findByCurrentReviewerId(Long reviewerId);
+    Optional<ReviewProcess> findByPaperId(Long paperId);
+    List<ReviewProcess> findByReviewStatus(String reviewStatus);
+    List<ReviewProcess> findByAssignedReviewerId(Long reviewerId);
     List<ReviewProcess> findByEditorId(Long editorId);
 }

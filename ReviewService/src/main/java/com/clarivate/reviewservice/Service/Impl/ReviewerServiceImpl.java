@@ -57,7 +57,7 @@ public class ReviewerServiceImpl implements ReviewerService {
         ReviewComment comment = ReviewComment.builder()
                 .reviewProcess(reviewProcess)
                 .paperVersion(paperVersion)
-                .reviewId(request.getReviewId())
+                .reviewerId(request.getReviewerId())
                 .comment(request.getComment())
                 .createdDate(LocalDateTime.now())
                 .build();
@@ -127,7 +127,7 @@ public class ReviewerServiceImpl implements ReviewerService {
     private ReviewCommentResponse mapCommentToResponse(ReviewComment comment) {
         return ReviewCommentResponse.builder()
                 .commentId(comment.getCommentId())
-                .reviewerId(comment.getReviewId())
+                .reviewerId(comment.getReviewerId())
                 .comment(comment.getComment())
                 .createdDate(comment.getCreatedDate())
                 .build();

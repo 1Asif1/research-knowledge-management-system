@@ -81,7 +81,7 @@ public class ResearcherServiceImpl implements ResearcherService {
                 .orElseThrow(() -> new EntityNotFoundException("Paper not found with id: " + paperId));
 
         PaperVersion latestVersion = paperVersionRepository
-                .findTopByPaperSubmissionPaperIdOrderByVersionDesc(paperId);
+                .findTopByPaperSubmissionPaperIdOrderByVersionNumberDesc(paperId);
 
         int nextVersionNumber = (latestVersion != null) ? latestVersion.getVersionNumber() + 1 : 2;
 
@@ -97,7 +97,7 @@ public class ResearcherServiceImpl implements ResearcherService {
         paperVersionRepository.save(newVersion);
 
         ReviewProcess reviewProcess = reviewProcessRepository
-                .findByPaperSubmissionPaperId(paperId.intValue())
+                .findByPaperId(paperId)
                 .orElseThrow(() -> new EntityNotFoundException("Review process not found for paper: " + paperId));
 
         reviewProcess.setCurrentVersion(nextVersionNumber);

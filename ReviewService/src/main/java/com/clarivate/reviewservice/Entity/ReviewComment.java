@@ -2,7 +2,6 @@ package com.clarivate.reviewservice.Entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.annotation.Id;
 
 import java.time.LocalDateTime;
 
@@ -27,7 +26,7 @@ public class ReviewComment {
     private PaperVersion paperVersion;
 
     @Column(nullable = false)
-    private long reviewId;
+    private long reviewerId;
 
     @Column(nullable = false, length = 10000)
     private String comment;

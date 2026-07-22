@@ -92,7 +92,7 @@ public class EditorServiceImpl implements EditorService {
     @Override
     @Transactional(readOnly = true)
     public List<ReviewProcessResponse> getPendingReviews() {
-        return reviewProcessRepository.findByReviewStatus(ReviewStatus.SUBMITTED)
+        return reviewProcessRepository.findByReviewStatus(ReviewStatus.SUBMITTED.toString())
                 .stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());

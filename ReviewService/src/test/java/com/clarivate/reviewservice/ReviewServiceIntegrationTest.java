@@ -69,7 +69,7 @@ class ReviewServiceIntegrationTest {
         assertEquals("Machine Learning in Healthcare", paper.getTitle());
 
         // Verify review process was created
-        ReviewProcess reviewProcess = reviewProcessRepository.findByPaperSubmissionPaperId(paperId.intValue()).orElse(null);
+        ReviewProcess reviewProcess = reviewProcessRepository.findByPaperId(paperId).orElse(null);
         assertNotNull(reviewProcess);
         assertEquals(ReviewStatus.SUBMITTED.toString(), reviewProcess.getReviewStatus());
         assertEquals(EditorDecision.PENDING.toString(), reviewProcess.getEditorDecision());

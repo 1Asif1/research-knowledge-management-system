@@ -7,5 +7,5 @@ import java.util.List;
 
 public interface ReviewCommentRepository extends JpaRepository<ReviewComment, Long> {
     List<ReviewComment> findByReviewProcessReviewId(Long reviewId);
-    List<ReviewComment> findByPaperVersionId(Long versionId);
+    List<ReviewComment> findByPaperVersionVersionId(Long versionId);
 }
