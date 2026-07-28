@@ -1,0 +1,13 @@
+package com.clarivate.reportservice.dto;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
+public record PublicationReportRequest(
+        @NotBlank String title,
+        @NotNull Long authorId,
+        @NotBlank String status,
+        String payload
+) {
+}
+
