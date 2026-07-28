@@ -7,5 +7,5 @@ import java.util.List;
 
 public interface PaperVersionRepository extends JpaRepository<PaperVersion, Long> {
     List<PaperVersion> findByPaperId(Long paperId);
-    PaperVersion findByPaperIdAndVersionId(Long paperId,Long versionId);
+    PaperVersion findByPaperIdAndVersion(Long paperId, Integer version);
 }

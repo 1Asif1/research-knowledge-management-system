@@ -1,21 +1,27 @@
 package com.clarivate.userservice.service;
 
 import com.clarivate.userservice.dto.UpdateUserRequest;
+import com.clarivate.userservice.dto.UserLoginResponse;
 import com.clarivate.userservice.dto.UserRequest;
 import com.clarivate.userservice.dto.UserResponse;
 import com.clarivate.userservice.exception.ResourceNotFoundException;
 import com.clarivate.userservice.model.User;
 import com.clarivate.userservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
 @Service
 @RequiredArgsConstructor
 public class UserServiceImp implements UserService {
 
     private final UserRepository repo;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public UserResponse createUser(UserRequest request) {
@@ -25,7 +31,7 @@ public class UserServiceImp implements UserService {
         user.setFirstName(request.firstName());
         user.setLastName(request.lastName());
         user.setEmail(request.email());
-        user.setPassword(request.password());   // Later store encoded password
+        user.setPassword(passwordEncoder.encode(request.password()));
         user.setRole(request.role());
 
         User savedUser = repo.save(user);
@@ -60,6 +66,27 @@ public class UserServiceImp implements UserService {
                         new ResourceNotFoundException("User not found with email " + email));
 
         return mapToResponse(user);
+    }
+
+    @Override
+    public UserLoginResponse login(String email, String password) throws ResourceNotFoundException {
+        User user = repo.findByEmail(email)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User not found with email " + email));
+
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw new ResponseStatusException(UNAUTHORIZED, "Invalid credentials");
+        }
+
+        return new UserLoginResponse(
+                user.getUserId(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getEmail(),
+                null,
+                user.getRole(),
+                "Login successful"
+        );
     }
 
     @Override

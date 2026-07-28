@@ -4,7 +4,7 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
-@FeignClient(name = "review-service", url = "${review-service.url:http://localhost:8003}")
+@FeignClient(name = "review-service", url = "${review-service.url:http://localhost:8085}")
 public interface ReviewServiceClient {
     
     @GetMapping("/review/paper/{paperId}")

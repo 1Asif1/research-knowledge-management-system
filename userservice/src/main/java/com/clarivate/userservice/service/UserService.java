@@ -1,6 +1,7 @@
 package com.clarivate.userservice.service;
 
 import com.clarivate.userservice.dto.UpdateUserRequest;
+import com.clarivate.userservice.dto.UserLoginResponse;
 import com.clarivate.userservice.dto.UserRequest;
 import com.clarivate.userservice.dto.UserResponse;
 import com.clarivate.userservice.exception.ResourceNotFoundException;
@@ -18,6 +19,8 @@ public interface UserService {
     UserResponse getUserById(Long id) throws ResourceNotFoundException;
 
     UserResponse getUserByEmail(String email) throws ResourceNotFoundException;
+
+    UserLoginResponse login(String email, String password) throws ResourceNotFoundException;
 
     UserResponse updateUser(Long id, UpdateUserRequest request) throws ResourceNotFoundException;
 

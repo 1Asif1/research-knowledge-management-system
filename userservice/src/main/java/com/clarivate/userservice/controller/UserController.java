@@ -1,5 +1,7 @@
 package com.clarivate.userservice.controller;
 import com.clarivate.userservice.dto.UpdateUserRequest;
+import com.clarivate.userservice.dto.UserLoginRequest;
+import com.clarivate.userservice.dto.UserLoginResponse;
 import com.clarivate.userservice.dto.UserRequest;
 import com.clarivate.userservice.dto.UserResponse;
 import com.clarivate.userservice.exception.ResourceNotFoundException;
@@ -32,6 +34,12 @@ public class UserController {
     public ResponseEntity<List<UserResponse>> getAllUsers() {
 
         return ResponseEntity.ok(service.getAllUsers());
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<UserLoginResponse> login(@Valid @RequestBody UserLoginRequest request)
+            throws ResourceNotFoundException {
+        return ResponseEntity.ok(service.login(request.email(), request.password()));
     }
 
     // GET /users/{id}

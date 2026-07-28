@@ -32,12 +32,10 @@ public class PaperServiceImpl implements PaperService {
     }
 
     @Override
-    public PaperResponse updatePaper(Long id, @org.jetbrains.annotations.UnknownNullability UpdatePaperRequest paperRequest) {
+    public PaperResponse updatePaper(Long id, UpdatePaperRequest paperRequest) {
         Paper paper = paperRepository.findById(id).orElseThrow(() -> new RuntimeException("Paper not found"));
         paper.setTitle(paperRequest.getTitle());
         paper.setDescription(paperRequest.getDescription());
-        paper.setAuthorId(paperRequest.getAuthorId());
-        paper.setStatus(PaperStatus.valueOf(paperRequest.getStatus()));
         paperRepository.save(paper);
         return new PaperResponse(paper);
     }

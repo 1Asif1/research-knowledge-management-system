@@ -46,11 +46,11 @@ public class PaperVersionController {
     public ResponseEntity<String>
     getVersionById(
             @PathVariable Long paperId,
-            @PathVariable Long versionId) {
+            @PathVariable("versionId") Integer versionNumber) {
 
         return ResponseEntity.ok(
                 paperVersionService.getPaperVersionContent(
-                        versionId,
+                        versionNumber,
                         paperId));
     }
 }

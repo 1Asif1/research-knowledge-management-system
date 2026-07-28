@@ -24,15 +24,19 @@ public class PaperVersionServiceImpl implements PaperVersionService {
 
     @Override
     public void uploadPaperVersion(Long paperId, String description) {
-        PaperVersion paperVersion = paperVersionRepository.findByPaperId(paperId).stream().findFirst().orElse(null);
-        if (paperVersion != null) {
-            paperVersion.setVersion(paperVersion.getVersion() + 1);
-            paperVersion.setDescription(description);
-            paperVersionRepository.save(paperVersion);
-        }
-        else {
-            uploadPaperVersion(paperId, description);
-        }
+        Paper paper = paperRepository.findById(paperId)
+                .orElseThrow(() -> new RuntimeException("Paper not found"));
+        Integer nextVersion = paperVersionRepository.findByPaperId(paperId)
+                .stream()
+                .map(PaperVersion::getVersion)
+                .max(Integer::compareTo)
+                .orElse(0) + 1;
+
+        PaperVersion paperVersion = new PaperVersion();
+        paperVersion.setPaper(paper);
+        paperVersion.setVersion(nextVersion);
+        paperVersion.setDescription(description);
+        paperVersionRepository.save(paperVersion);
     }
 
     @Override
@@ -45,7 +49,7 @@ public class PaperVersionServiceImpl implements PaperVersionService {
         version.setPaper(paper);
         version.setDescription(description);
 
-        Integer nextVersion = paper.getPaperVersions()
+        Integer nextVersion = paperVersionRepository.findByPaperId(paperId)
                 .stream()
                 .map(PaperVersion::getVersion)
                 .max(Integer::compareTo)
@@ -63,8 +67,8 @@ public class PaperVersionServiceImpl implements PaperVersionService {
     }
 
     @Override
-    public String getPaperVersionContent(Long versionId,Long paperId) {
-        PaperVersion paperVersion = paperVersionRepository.findByPaperIdAndVersionId(paperId, versionId);
+    public String getPaperVersionContent(Integer versionNumber, Long paperId) {
+        PaperVersion paperVersion = paperVersionRepository.findByPaperIdAndVersion(paperId, versionNumber);
         return paperVersion != null ? paperVersion.toString() : "Paper version not found";
     }
 
