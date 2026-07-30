@@ -10,7 +10,6 @@ import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/auth")
-@CrossOrigin(origins = "${app.cors.allowed-origin}")
 public class AuthController {
     private final AuthService authService;
 

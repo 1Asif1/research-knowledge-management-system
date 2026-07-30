@@ -14,7 +14,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/report")
-@CrossOrigin(origins = "${app.cors.allowed-origin}")
 @RequiredArgsConstructor
 public class ReportController {
 
@@ -35,4 +34,3 @@ public class ReportController {
         return ResponseEntity.ok(reportService.getAnnualSummary(year));
     }
 }
-
