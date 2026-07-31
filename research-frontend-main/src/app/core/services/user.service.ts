@@ -17,6 +17,16 @@ export class UserService {
     return this.http.get<UserResponse[]>(this.baseUrl);
   }
 
+  searchUsers(query: string): Observable<UserResponse[]> {
+    const normalizedQuery = query.trim();
+    if (!normalizedQuery) {
+      return this.getAllUsers();
+    }
+    return this.http.get<UserResponse[]>(`${this.baseUrl}/search`, {
+      params: { q: normalizedQuery }
+    });
+  }
+
   getUserById(id: number): Observable<UserResponse> {
     return this.http.get<UserResponse>(`${this.baseUrl}/${id}`);
   }
