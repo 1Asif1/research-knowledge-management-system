@@ -1,17 +1,18 @@
 package com.clarivate.reviewservice.Service.Impl;
 
-import com.clarivate.reviewservice.Entity.ReviewProcess;
+import com.clarivate.reviewservice.Entity.PaperVersion;
 import com.clarivate.reviewservice.Entity.ReviewComment;
 import com.clarivate.reviewservice.Entity.ReviewHistory;
-import com.clarivate.reviewservice.Entity.PaperVersion;
+import com.clarivate.reviewservice.Entity.ReviewProcess;
 import com.clarivate.reviewservice.Entity.ReviewerAssignment;
+import com.clarivate.reviewservice.Enums.AssignmentStatus;
+import com.clarivate.reviewservice.Enums.EditorDecision;
 import com.clarivate.reviewservice.Enums.ReviewStatus;
 import com.clarivate.reviewservice.Enums.ReviewerRecommendation;
-import com.clarivate.reviewservice.Enums.AssignmentStatus;
-import com.clarivate.reviewservice.Repository.ReviewProcessRepository;
+import com.clarivate.reviewservice.Repository.PaperVersionRepository;
 import com.clarivate.reviewservice.Repository.ReviewCommentRepository;
 import com.clarivate.reviewservice.Repository.ReviewHistoryRepository;
-import com.clarivate.reviewservice.Repository.PaperVersionRepository;
+import com.clarivate.reviewservice.Repository.ReviewProcessRepository;
 import com.clarivate.reviewservice.Repository.ReviewerAssignmentRepository;
 import com.clarivate.reviewservice.Service.ReviewerService;
 import com.clarivate.reviewservice.dto.Request.ReviewCommentRequest;
@@ -31,6 +32,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional
 public class ReviewerServiceImpl implements ReviewerService {
+
     private final ReviewProcessRepository reviewProcessRepository;
     private final ReviewCommentRepository reviewCommentRepository;
     private final ReviewHistoryRepository reviewHistoryRepository;
@@ -40,19 +42,36 @@ public class ReviewerServiceImpl implements ReviewerService {
     @Override
     @Transactional(readOnly = true)
     public List<ReviewProcessResponse> getAssignedReviews(Long reviewerId) {
-        return reviewerAssignmentRepository.findByReviewerId(reviewerId)
+        return reviewerAssignmentRepository
+                .findByReviewerId(reviewerId)
                 .stream()
-                .map(assignment -> mapReviewToResponse(assignment.getReviewProcess()))
+                .map(assignment ->
+                        mapReviewToResponse(assignment.getReviewProcess())
+                )
                 .collect(Collectors.toList());
     }
 
     @Override
-    public ReviewCommentResponse addComment(ReviewCommentRequest request) {
-        ReviewProcess reviewProcess = reviewProcessRepository.findById(request.getReviewId())
-                .orElseThrow(() -> new EntityNotFoundException("Review not found with id: " + request.getReviewId()));
+    public ReviewCommentResponse addComment(
+            ReviewCommentRequest request
+    ) {
+        ReviewProcess reviewProcess = reviewProcessRepository
+                .findById(request.getReviewId())
+                .orElseThrow(() ->
+                        new EntityNotFoundException(
+                                "Review not found with id: "
+                                        + request.getReviewId()
+                        )
+                );
 
-        PaperVersion paperVersion = paperVersionRepository.findById(request.getVersionId().intValue())
-                .orElseThrow(() -> new EntityNotFoundException("Paper version not found with id: " + request.getVersionId()));
+        PaperVersion paperVersion = paperVersionRepository
+                .findById(request.getVersionId())
+                .orElseThrow(() ->
+                        new EntityNotFoundException(
+                                "Paper version not found with id: "
+                                        + request.getVersionId()
+                        )
+                );
 
         ReviewComment comment = ReviewComment.builder()
                 .reviewProcess(reviewProcess)
@@ -62,38 +81,71 @@ public class ReviewerServiceImpl implements ReviewerService {
                 .createdDate(LocalDateTime.now())
                 .build();
 
-        ReviewComment savedComment = reviewCommentRepository.save(comment);
+        ReviewComment savedComment =
+                reviewCommentRepository.save(comment);
 
         return mapCommentToResponse(savedComment);
     }
 
     @Override
-    public ReviewProcessResponse submitRecommendations(Long reviewId, ReviewRecommendationRequest request) {
-        ReviewProcess reviewProcess = reviewProcessRepository.findById(reviewId)
-                .orElseThrow(() -> new EntityNotFoundException("Review not found with id: " + reviewId));
+    public ReviewProcessResponse submitRecommendations(
+            Long reviewId,
+            ReviewRecommendationRequest request
+    ) {
+        ReviewProcess reviewProcess = reviewProcessRepository
+                .findById(reviewId)
+                .orElseThrow(() ->
+                        new EntityNotFoundException(
+                                "Review not found with id: " + reviewId
+                        )
+                );
 
-        reviewProcess.setReviewRecommendation(request.getRecommendation().toString());
-        reviewProcess.setReviewStatus(ReviewStatus.UNDER_REVIEW.toString());
+        reviewProcess.setReviewRecommendation(
+                request.getRecommendation().toString()
+        );
+
+        /*
+         * Keep the review process under review until the editor
+         * makes the final editorial decision.
+         */
+        reviewProcess.setReviewStatus(
+                ReviewStatus.UNDER_REVIEW.toString()
+        );
+
         reviewProcess.setLastUpdated(LocalDateTime.now());
-        ReviewProcess updatedReview = reviewProcessRepository.save(reviewProcess);
+
+        ReviewProcess updatedReview =
+                reviewProcessRepository.save(reviewProcess);
 
         ReviewHistory history = ReviewHistory.builder()
                 .reviewProcess(reviewProcess)
                 .action("Review Recommendation Submitted")
-                .performedBy(String.valueOf(reviewProcess.getAssignedReviewerId()))
-                .remarks("Recommendation: " + request.getRecommendation())
+                .performedBy(
+                        String.valueOf(
+                                reviewProcess.getAssignedReviewerId()
+                        )
+                )
+                .remarks(
+                        "Recommendation: "
+                                + request.getRecommendation()
+                )
                 .actionDate(LocalDateTime.now())
                 .build();
+
         reviewHistoryRepository.save(history);
 
-        ReviewerAssignment assignment = reviewerAssignmentRepository
-                .findByReviewProcessReviewId(reviewId)
-                .stream()
-                .findFirst()
-                .orElse(null);
+        ReviewerAssignment assignment =
+                reviewerAssignmentRepository
+                        .findByReviewProcessReviewId(reviewId)
+                        .stream()
+                        .findFirst()
+                        .orElse(null);
 
         if (assignment != null) {
-            assignment.setAssignmentStatus(AssignmentStatus.COMPLETED);
+            assignment.setAssignmentStatus(
+                    AssignmentStatus.COMPLETED
+            );
+
             reviewerAssignmentRepository.save(assignment);
         }
 
@@ -103,28 +155,84 @@ public class ReviewerServiceImpl implements ReviewerService {
     @Override
     @Transactional(readOnly = true)
     public List<ReviewCommentResponse> getComments(Long reviewId) {
-        return reviewCommentRepository.findByReviewProcessReviewId(reviewId)
+        return reviewCommentRepository
+                .findByReviewProcessReviewId(reviewId)
                 .stream()
                 .map(this::mapCommentToResponse)
                 .collect(Collectors.toList());
     }
 
-    private ReviewProcessResponse mapReviewToResponse(ReviewProcess review) {
+    private ReviewProcessResponse mapReviewToResponse(
+            ReviewProcess review
+    ) {
+        Long currentVersionId = paperVersionRepository
+                .findByPaperSubmissionPaperIdAndVersionNumber(
+                        review.getPaperId(),
+                        review.getCurrentVersion()
+                )
+                .map(PaperVersion::getVersionId)
+                .orElse(null);
+
         return ReviewProcessResponse.builder()
                 .reviewId(review.getReviewId())
                 .paperId(review.getPaperId())
-                .editorId(review.getEditorId() > 0 ? review.getEditorId() : null)
-                .reviewerId(review.getAssignedReviewerId() > 0 ? review.getAssignedReviewerId() : null)
+                .editorId(
+                        review.getEditorId() > 0
+                                ? review.getEditorId()
+                                : null
+                )
+                .reviewerId(
+                        review.getAssignedReviewerId() > 0
+                                ? review.getAssignedReviewerId()
+                                : null
+                )
                 .currentVersion(review.getCurrentVersion())
-                .reviewStatus(ReviewStatus.valueOf(review.getReviewStatus()))
-                .reviewerRecommendation(review.getReviewRecommendation() != null ?
-                        ReviewerRecommendation.valueOf(review.getReviewRecommendation()) : null)
-                .editorDecision(review.getEditorDecision() != null ?
-                        com.clarivate.reviewservice.Enums.EditorDecision.valueOf(review.getEditorDecision()) : null)
+                .currentVersionId(currentVersionId)
+                .reviewStatus(
+                        parseReviewStatus(review.getReviewStatus())
+                )
+                .reviewerRecommendation(
+                        parseReviewerRecommendation(
+                                review.getReviewRecommendation()
+                        )
+                )
+                .editorDecision(
+                        parseEditorDecision(
+                                review.getEditorDecision()
+                        )
+                )
                 .build();
     }
 
-    private ReviewCommentResponse mapCommentToResponse(ReviewComment comment) {
+    private ReviewStatus parseReviewStatus(String status) {
+        if (status == null || status.isBlank()) {
+            return null;
+        }
+
+        return ReviewStatus.valueOf(status);
+    }
+
+    private ReviewerRecommendation parseReviewerRecommendation(
+            String recommendation
+    ) {
+        if (recommendation == null || recommendation.isBlank()) {
+            return null;
+        }
+
+        return ReviewerRecommendation.valueOf(recommendation);
+    }
+
+    private EditorDecision parseEditorDecision(String decision) {
+        if (decision == null || decision.isBlank()) {
+            return null;
+        }
+
+        return EditorDecision.valueOf(decision);
+    }
+
+    private ReviewCommentResponse mapCommentToResponse(
+            ReviewComment comment
+    ) {
         return ReviewCommentResponse.builder()
                 .commentId(comment.getCommentId())
                 .reviewerId(comment.getReviewerId())

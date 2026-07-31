@@ -1,0 +1,225 @@
+<div class="editor-dashboard">
+  <header class="page-header">
+    <div>
+      <h1>Editor Dashboard</h1>
+      <p>
+        Manage submitted papers, reviewer assignments and editorial
+        decisions.
+      </p>
+    </div>
+
+    <a
+      mat-flat-button
+      color="primary"
+      routerLink="/editor/review-queue"
+    >
+      <mat-icon>fact_check</mat-icon>
+      Open Review Queue
+    </a>
+  </header>
+
+  <section class="stats-grid">
+    <article class="stat-card">
+      <div class="stat-card__icon stat-card__icon--submissions">
+        <mat-icon>description</mat-icon>
+      </div>
+
+      <div>
+        <span>Total Submissions</span>
+        <strong>{{ totalSubmissions() }}</strong>
+      </div>
+    </article>
+
+    <article class="stat-card">
+      <div class="stat-card__icon stat-card__icon--unassigned">
+        <mat-icon>person_add</mat-icon>
+      </div>
+
+      <div>
+        <span>Unassigned</span>
+        <strong>{{ unassignedCount() }}</strong>
+      </div>
+    </article>
+
+    <article class="stat-card">
+      <div class="stat-card__icon stat-card__icon--review">
+        <mat-icon>rate_review</mat-icon>
+      </div>
+
+      <div>
+        <span>Under Review</span>
+        <strong>{{ underReviewCount() }}</strong>
+      </div>
+    </article>
+
+    <article class="stat-card">
+      <div class="stat-card__icon stat-card__icon--decision">
+        <mat-icon>gavel</mat-icon>
+      </div>
+
+      <div>
+        <span>Awaiting Decision</span>
+        <strong>{{ awaitingDecisionCount() }}</strong>
+      </div>
+    </article>
+  </section>
+
+  <section class="dashboard-grid">
+    <article class="queue-card">
+      <div class="section-header">
+        <div>
+          <h2>Recent Submissions</h2>
+          <p>Latest papers requiring editorial attention.</p>
+        </div>
+
+        <a mat-button routerLink="/editor/review-queue">
+          View All
+          <mat-icon>arrow_forward</mat-icon>
+        </a>
+      </div>
+
+      <div class="queue-table">
+        <div class="queue-table__header">
+          <span>Paper</span>
+          <span>Researcher</span>
+          <span>Status</span>
+          <span>Reviewers</span>
+          <span>Action</span>
+        </div>
+
+        <article
+          *ngFor="let item of recentItems()"
+          class="queue-table__row"
+        >
+          <div class="paper-cell">
+            <div class="paper-cell__icon">
+              <mat-icon>article</mat-icon>
+            </div>
+
+            <div>
+              <strong>{{ item.title }}</strong>
+              <span>
+                Paper #{{ item.paperId }} ·
+                {{ formatDate(item.submittedDate) }}
+              </span>
+            </div>
+          </div>
+
+          <span>{{ item.researcherName }}</span>
+
+          <span
+            class="status-badge"
+            [ngClass]="getStatusClass(item.status)"
+          >
+            {{ formatStatus(item.status) }}
+          </span>
+
+          <span>
+            {{ item.assignedReviewers }}
+          </span>
+
+          <a
+            *ngIf="item.assignedReviewers === 0"
+            mat-stroked-button
+            [routerLink]="[
+              '/editor/assign-reviewer',
+              item.reviewId
+            ]"
+          >
+            Assign Reviewer
+          </a>
+
+          <a
+            *ngIf="item.status === 'REVIEW_COMPLETED'"
+            mat-stroked-button
+            [routerLink]="[
+              '/editor/decisions',
+              item.reviewId
+            ]"
+          >
+            Make Decision
+          </a>
+
+          <a
+            *ngIf="
+              item.assignedReviewers > 0 &&
+              item.status !== 'REVIEW_COMPLETED'
+            "
+            mat-stroked-button
+            routerLink="/editor/review-queue"
+          >
+            View Details
+          </a>
+        </article>
+      </div>
+    </article>
+
+    <aside class="quick-actions">
+      <h2>Quick Actions</h2>
+
+      <a
+        class="quick-action"
+        routerLink="/editor/review-queue"
+      >
+        <div class="quick-action__icon">
+          <mat-icon>fact_check</mat-icon>
+        </div>
+
+        <div>
+          <strong>Review Queue</strong>
+          <span>View all submitted papers</span>
+        </div>
+
+        <mat-icon>chevron_right</mat-icon>
+      </a>
+
+      <a
+        class="quick-action"
+        routerLink="/editor/decisions"
+      >
+        <div class="quick-action__icon">
+          <mat-icon>gavel</mat-icon>
+        </div>
+
+        <div>
+          <strong>Editorial Decisions</strong>
+          <span>Approve, reject or request revisions</span>
+        </div>
+
+        <mat-icon>chevron_right</mat-icon>
+      </a>
+
+      <a
+        class="quick-action"
+        routerLink="/editor/published-papers"
+      >
+        <div class="quick-action__icon">
+          <mat-icon>workspace_premium</mat-icon>
+        </div>
+
+        <div>
+          <strong>Published Papers</strong>
+          <span>View published research</span>
+        </div>
+
+        <mat-icon>chevron_right</mat-icon>
+      </a>
+
+      <a
+        class="quick-action"
+        routerLink="/editor/notifications"
+      >
+        <div class="quick-action__icon">
+          <mat-icon>notifications</mat-icon>
+        </div>
+
+        <div>
+          <strong>Notifications</strong>
+          <span>View workflow updates</span>
+        </div>
+
+        <mat-icon>chevron_right</mat-icon>
+      </a>
+    </aside>
+  </section>
+</div>

@@ -71,8 +71,11 @@ public class JwtAuthenticationFilter implements GlobalFilter {
         if (path.startsWith("/api/editor/")) {
             return "EDITOR".equals(role) || "ADMIN".equals(role);
         }
-        if (path.startsWith("/report/")) {
+        if (path.equals("/report") || path.startsWith("/report/")) {
             return "EDITOR".equals(role) || "ADMIN".equals(role);
+        }
+        if (path.startsWith("/users")) {
+            return "ADMIN".equals(role);
         }
         return true;
     }

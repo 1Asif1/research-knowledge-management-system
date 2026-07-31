@@ -29,7 +29,8 @@ export const RESEARCHER_ROUTES: Routes = [
   },
   {
     path: 'profile',
-    loadComponent: () => import('./profile/profile.component').then((m) => m.ProfileComponent),
-    data: { breadcrumb: 'Profile' }
+    loadComponent: () =>
+      import('@shared/components/profile/profile.component')
+        .then(m => m.ProfileComponent)
   }
 ];

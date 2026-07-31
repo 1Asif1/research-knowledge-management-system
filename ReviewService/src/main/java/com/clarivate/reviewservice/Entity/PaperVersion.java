@@ -6,7 +6,7 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name= "paper_versions")
+@Table(name = "paper_versions")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -16,10 +16,10 @@ public class PaperVersion {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long versionId;
+    private Long versionId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name= "paper_id", nullable=false)
+    @JoinColumn(name = "paper_id", nullable = false)
     private PaperSubmission paperSubmission;
 
     @Column(nullable = false)
@@ -38,5 +38,4 @@ public class PaperVersion {
     private String uploadedBy;
 
     private LocalDateTime uploadedDate;
-
 }

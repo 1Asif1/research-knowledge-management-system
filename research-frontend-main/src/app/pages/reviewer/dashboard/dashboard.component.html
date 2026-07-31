@@ -1,0 +1,187 @@
+<div class="dashboard">
+  <div class="dashboard__heading">
+    <div>
+      <h1>Reviewer Dashboard</h1>
+      <p class="text-secondary">
+        Review assigned research papers and submit your recommendations.
+      </p>
+    </div>
+
+    <button
+      mat-flat-button
+      color="primary"
+      routerLink="/reviewer/assigned-papers"
+    >
+      <mat-icon>rate_review</mat-icon>
+      View Assigned Papers
+    </button>
+  </div>
+
+  <app-loading-spinner
+    *ngIf="loading()"
+    message="Loading your reviewer dashboard..."
+  ></app-loading-spinner>
+
+  <div
+    class="dashboard__error card-surface"
+    *ngIf="!loading() && errorMessage()"
+  >
+    <mat-icon>error_outline</mat-icon>
+
+    <div>
+      <h3>Could not load dashboard</h3>
+      <p>{{ errorMessage() }}</p>
+    </div>
+  </div>
+
+  <ng-container *ngIf="!loading() && !errorMessage()">
+    <div class="dashboard__stats">
+      <div class="stat-card card-surface">
+        <span class="stat-card__icon">
+          <mat-icon>assignment</mat-icon>
+        </span>
+
+        <span class="stat-card__value">
+          {{ stats().total }}
+        </span>
+
+        <span class="stat-card__label">
+          Total Assigned
+        </span>
+      </div>
+
+      <div class="stat-card card-surface">
+        <span class="stat-card__icon">
+          <mat-icon>pending_actions</mat-icon>
+        </span>
+
+        <span class="stat-card__value">
+          {{ stats().pending }}
+        </span>
+
+        <span class="stat-card__label">
+          Pending Reviews
+        </span>
+      </div>
+
+      <div class="stat-card card-surface">
+        <span class="stat-card__icon">
+          <mat-icon>task_alt</mat-icon>
+        </span>
+
+        <span class="stat-card__value">
+          {{ stats().completed }}
+        </span>
+
+        <span class="stat-card__label">
+          Completed Reviews
+        </span>
+      </div>
+
+      <div class="stat-card card-surface">
+        <span class="stat-card__icon">
+          <mat-icon>published_with_changes</mat-icon>
+        </span>
+
+        <span class="stat-card__value">
+          {{ stats().revisions }}
+        </span>
+
+        <span class="stat-card__label">
+          Revisions Suggested
+        </span>
+      </div>
+
+      <div class="stat-card card-surface">
+        <span class="stat-card__icon">
+          <mat-icon>verified</mat-icon>
+        </span>
+
+        <span class="stat-card__value">
+          {{ stats().accepted }}
+        </span>
+
+        <span class="stat-card__label">
+          Accepted
+        </span>
+      </div>
+    </div>
+
+    <div class="dashboard__grid">
+      <section class="dashboard__section card-surface">
+        <div class="dashboard__section-header">
+          <div>
+            <h2>Pending Assignments</h2>
+            <p class="text-secondary">
+              Papers waiting for your review.
+            </p>
+          </div>
+
+          <a
+            routerLink="/reviewer/assigned-papers"
+            class="text-link"
+          >
+            View all
+          </a>
+        </div>
+
+        <div
+          class="dashboard__papers"
+          *ngIf="recentAssignments().length; else emptyAssignments"
+        >
+          <app-paper-card
+            *ngFor="let review of recentAssignments()"
+            [title]="'Paper #' + review.paperId"
+            [date]="'Version ' + review.currentVersion"
+            statusLabel="Pending Review"
+            statusIntent="warning"
+            [routerLink]="[
+              '/reviewer/reviews',
+              review.reviewId
+            ]"
+          ></app-paper-card>
+        </div>
+
+        <ng-template #emptyAssignments>
+          <div class="dashboard__empty">
+            <mat-icon>assignment_turned_in</mat-icon>
+
+            <h3>No pending reviews</h3>
+
+            <p>
+              You have completed all currently assigned papers.
+            </p>
+          </div>
+        </ng-template>
+      </section>
+
+      <section class="dashboard__section card-surface">
+        <div class="dashboard__section-header">
+          <div>
+            <h2>Review Activity</h2>
+            <p class="text-secondary">
+              Your recent assignment and recommendation activity.
+            </p>
+          </div>
+        </div>
+
+        <app-timeline
+          *ngIf="timelineSteps().length; else emptyTimeline"
+          [steps]="timelineSteps()"
+        ></app-timeline>
+
+        <ng-template #emptyTimeline>
+          <div class="dashboard__empty">
+            <mat-icon>timeline</mat-icon>
+
+            <h3>No review activity</h3>
+
+            <p>
+              Review activity will appear after papers are assigned to you.
+            </p>
+          </div>
+        </ng-template>
+      </section>
+    </div>
+  </ng-container>
+</div>

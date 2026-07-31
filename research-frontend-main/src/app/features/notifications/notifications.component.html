@@ -1,0 +1,215 @@
+<div class="notifications-page">
+  <header class="page-header">
+    <div>
+      <h1>Notifications</h1>
+
+      <p>
+        View updates, reminders and activity related to your
+        account.
+      </p>
+    </div>
+
+    <div class="page-header__actions">
+      <button
+        mat-stroked-button
+        type="button"
+        (click)="refreshNotifications()"
+        [disabled]="loading()"
+      >
+        <mat-icon>refresh</mat-icon>
+
+        {{ loading() ? 'Refreshing...' : 'Refresh' }}
+      </button>
+
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        (click)="markAllAsRead()"
+        [disabled]="unreadCount() === 0"
+      >
+        <mat-icon>done_all</mat-icon>
+        Mark All as Read
+      </button>
+    </div>
+  </header>
+
+  <section class="notification-stats">
+    <article class="stat-card">
+      <div class="stat-card__icon stat-card__icon--unread">
+        <mat-icon>mark_email_unread</mat-icon>
+      </div>
+
+      <div>
+        <span>Unread</span>
+        <strong>{{ unreadCount() }}</strong>
+      </div>
+    </article>
+
+    <article class="stat-card">
+      <div class="stat-card__icon stat-card__icon--total">
+        <mat-icon>notifications</mat-icon>
+      </div>
+
+      <div>
+        <span>Total</span>
+        <strong>{{ totalCount() }}</strong>
+      </div>
+    </article>
+
+    <article class="stat-card">
+      <div class="stat-card__icon stat-card__icon--assignment">
+        <mat-icon>assignment</mat-icon>
+      </div>
+
+      <div>
+        <span>Assignments</span>
+        <strong>{{ assignmentCount() }}</strong>
+      </div>
+    </article>
+  </section>
+
+  <section class="notification-toolbar">
+    <mat-form-field appearance="outline">
+      <mat-label>Search notifications</mat-label>
+
+      <mat-icon matPrefix>search</mat-icon>
+
+      <input
+        matInput
+        type="search"
+        [ngModel]="searchTerm()"
+        (ngModelChange)="updateSearch($event)"
+        placeholder="Search by title, message or type"
+      />
+
+      <button
+        *ngIf="searchTerm()"
+        mat-icon-button
+        matSuffix
+        type="button"
+        aria-label="Clear search"
+        (click)="updateSearch('')"
+      >
+        <mat-icon>close</mat-icon>
+      </button>
+    </mat-form-field>
+
+    <mat-button-toggle-group
+      [value]="selectedFilter()"
+      (change)="updateFilter($event.value)"
+      aria-label="Notification filter"
+    >
+      <mat-button-toggle value="ALL">
+        All
+      </mat-button-toggle>
+
+      <mat-button-toggle value="UNREAD">
+        Unread
+      </mat-button-toggle>
+
+      <mat-button-toggle value="READ">
+        Read
+      </mat-button-toggle>
+    </mat-button-toggle-group>
+  </section>
+
+  <section class="notifications-list">
+    <article
+      *ngFor="let notification of filteredNotifications()"
+      class="notification-card"
+      [class.notification-card--unread]="!notification.read"
+    >
+      <div
+        class="notification-icon"
+        [ngClass]="getNotificationClass(notification.type)"
+      >
+        <mat-icon>
+          {{ getNotificationIcon(notification.type) }}
+        </mat-icon>
+      </div>
+
+      <div class="notification-content">
+        <div class="notification-content__heading">
+          <div>
+            <div class="notification-title-row">
+              <h2>{{ notification.title }}</h2>
+
+              <span
+                *ngIf="!notification.read"
+                class="unread-badge"
+              >
+                Unread
+              </span>
+            </div>
+
+            <p>{{ notification.message }}</p>
+          </div>
+
+          <span class="notification-time">
+            <mat-icon>schedule</mat-icon>
+
+            {{ getRelativeTime(notification.createdAt) }}
+          </span>
+        </div>
+
+        <div class="notification-actions">
+          <a
+            *ngIf="notification.actionUrl"
+            mat-stroked-button
+            [routerLink]="notification.actionUrl"
+            (click)="markAsRead(notification.id)"
+          >
+            <mat-icon>open_in_new</mat-icon>
+
+            {{ getActionLabel(notification.type) }}
+          </a>
+
+          <button
+            *ngIf="!notification.read"
+            mat-button
+            type="button"
+            (click)="markAsRead(notification.id)"
+          >
+            <mat-icon>done</mat-icon>
+            Mark as Read
+          </button>
+        </div>
+      </div>
+
+      <span
+        *ngIf="!notification.read"
+        class="unread-indicator"
+        aria-label="Unread notification"
+      ></span>
+    </article>
+
+    <div
+      *ngIf="filteredNotifications().length === 0"
+      class="empty-state"
+    >
+      <mat-icon>notifications_off</mat-icon>
+
+      <h2>No notifications found</h2>
+
+      <p>
+        {{
+        searchTerm() || selectedFilter() !== 'ALL'
+        ? 'Try changing or clearing your filters.'
+        : 'You do not have any notifications yet.'
+        }}
+      </p>
+
+      <button
+        *ngIf="
+          searchTerm() || selectedFilter() !== 'ALL'
+        "
+        mat-stroked-button
+        type="button"
+        (click)="clearFilters()"
+      >
+        Clear Filters
+      </button>
+    </div>
+  </section>
+</div>

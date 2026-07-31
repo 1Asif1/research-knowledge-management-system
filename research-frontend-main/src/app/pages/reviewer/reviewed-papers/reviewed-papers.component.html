@@ -1,0 +1,283 @@
+<div class="reviewed-page">
+  <div class="reviewed-page__heading">
+    <div>
+      <h1>Reviewed Papers</h1>
+
+      <p class="text-secondary">
+        View papers for which you have submitted a recommendation.
+      </p>
+    </div>
+
+    <button
+      mat-stroked-button
+      type="button"
+      (click)="loadReviewedPapers()"
+      [disabled]="loading()"
+    >
+      <mat-icon>refresh</mat-icon>
+      Refresh
+    </button>
+  </div>
+
+  <section
+    class="reviewed-stats"
+    *ngIf="!loading() && !errorMessage()"
+  >
+    <article class="stat-card card-surface">
+      <div class="stat-card__icon">
+        <mat-icon>assignment_turned_in</mat-icon>
+      </div>
+
+      <div>
+        <span>Total Reviewed</span>
+        <strong>{{ totalReviewed() }}</strong>
+      </div>
+    </article>
+
+    <article class="stat-card card-surface">
+      <div class="stat-card__icon stat-card__icon--accept">
+        <mat-icon>verified</mat-icon>
+      </div>
+
+      <div>
+        <span>Accepted</span>
+        <strong>{{ acceptedCount() }}</strong>
+      </div>
+    </article>
+
+    <article class="stat-card card-surface">
+      <div class="stat-card__icon stat-card__icon--revision">
+        <mat-icon>published_with_changes</mat-icon>
+      </div>
+
+      <div>
+        <span>Revisions</span>
+        <strong>{{ revisionCount() }}</strong>
+      </div>
+    </article>
+
+    <article class="stat-card card-surface">
+      <div class="stat-card__icon stat-card__icon--reject">
+        <mat-icon>cancel</mat-icon>
+      </div>
+
+      <div>
+        <span>Rejected</span>
+        <strong>{{ rejectedCount() }}</strong>
+      </div>
+    </article>
+  </section>
+
+  <section class="reviewed-toolbar card-surface">
+    <mat-form-field appearance="outline">
+      <mat-label>Search reviewed papers</mat-label>
+
+      <mat-icon matPrefix>search</mat-icon>
+
+      <input
+        matInput
+        type="search"
+        [ngModel]="searchTerm()"
+        (ngModelChange)="updateSearch($event)"
+        placeholder="Search by paper ID, review ID or recommendation"
+      />
+
+      <button
+        *ngIf="searchTerm()"
+        mat-icon-button
+        matSuffix
+        type="button"
+        aria-label="Clear search"
+        (click)="updateSearch('')"
+      >
+        <mat-icon>close</mat-icon>
+      </button>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Recommendation</mat-label>
+
+      <mat-select
+        [ngModel]="recommendationFilter()"
+        (ngModelChange)="updateRecommendationFilter($event)"
+      >
+        <mat-option value="ALL">
+          All recommendations
+        </mat-option>
+
+        <mat-option value="ACCEPT">
+          Accept
+        </mat-option>
+
+        <mat-option value="MINOR_REVISION">
+          Minor Revision
+        </mat-option>
+
+        <mat-option value="MAJOR_REVISION">
+          Major Revision
+        </mat-option>
+
+        <mat-option value="REJECT">
+          Reject
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <button
+      mat-button
+      type="button"
+      class="clear-button"
+      (click)="clearFilters()"
+      [disabled]="
+        !searchTerm() &&
+        recommendationFilter() === 'ALL'
+      "
+    >
+      <mat-icon>filter_alt_off</mat-icon>
+      Clear Filters
+    </button>
+  </section>
+
+  <app-loading-spinner
+    *ngIf="loading()"
+    message="Loading reviewed papers..."
+  ></app-loading-spinner>
+
+  <section
+    *ngIf="!loading() && errorMessage()"
+    class="error-card card-surface"
+  >
+    <mat-icon>error_outline</mat-icon>
+
+    <div>
+      <h2>Could not load reviewed papers</h2>
+
+      <p>{{ errorMessage() }}</p>
+
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        (click)="loadReviewedPapers()"
+      >
+        Try Again
+      </button>
+    </div>
+  </section>
+
+  <section
+    *ngIf="!loading() && !errorMessage()"
+    class="reviewed-table card-surface"
+  >
+    <div class="reviewed-table__header">
+      <span>Paper</span>
+      <span>Version</span>
+      <span>Review Status</span>
+      <span>Recommendation</span>
+      <span>Action</span>
+    </div>
+
+    <article
+      *ngFor="let review of reviewedPapers()"
+      class="reviewed-table__row"
+    >
+      <div class="paper-cell">
+        <div class="paper-cell__icon">
+          <mat-icon>description</mat-icon>
+        </div>
+
+        <div>
+          <strong>Paper #{{ review.paperId }}</strong>
+          <span>Review #{{ review.reviewId }}</span>
+        </div>
+      </div>
+
+      <span class="version-text">
+        Version {{ review.currentVersion }}
+      </span>
+
+      <span class="status-badge">
+        {{ formatValue(review.reviewStatus) }}
+      </span>
+
+      <span
+        class="recommendation-badge"
+        [ngClass]="
+          getRecommendationClass(
+            review.reviewerRecommendation
+          )
+        "
+      >
+        <mat-icon>
+          {{
+            getRecommendationIcon(
+              review.reviewerRecommendation
+            )
+          }}
+        </mat-icon>
+
+        {{
+          formatValue(review.reviewerRecommendation)
+        }}
+      </span>
+
+      <a
+        mat-stroked-button
+        [routerLink]="[
+          '/reviewer/reviews',
+          review.reviewId
+        ]"
+      >
+        <mat-icon>visibility</mat-icon>
+        View Review
+      </a>
+    </article>
+
+    <div
+      *ngIf="reviewedPapers().length === 0"
+      class="reviewed-table__empty"
+    >
+      <mat-icon>history_edu</mat-icon>
+
+      <h2>
+        {{
+        searchTerm() ||
+        recommendationFilter() !== 'ALL'
+        ? 'No matching reviews'
+        : 'No reviewed papers yet'
+        }}
+      </h2>
+
+      <p
+        *ngIf="
+          !searchTerm() &&
+          recommendationFilter() === 'ALL'
+        "
+      >
+        Papers will appear here after you submit a
+        recommendation.
+      </p>
+
+      <p
+        *ngIf="
+          searchTerm() ||
+          recommendationFilter() !== 'ALL'
+        "
+      >
+        Try changing or clearing the current filters.
+      </p>
+
+      <button
+        *ngIf="
+          searchTerm() ||
+          recommendationFilter() !== 'ALL'
+        "
+        mat-stroked-button
+        type="button"
+        (click)="clearFilters()"
+      >
+        Clear Filters
+      </button>
+    </div>
+  </section>
+</div>

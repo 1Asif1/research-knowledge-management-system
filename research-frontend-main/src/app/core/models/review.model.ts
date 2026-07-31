@@ -47,9 +47,10 @@ export interface EditorDecisionRequest {
 export interface ReviewProcessResponse {
   reviewId: number;
   paperId: number;
-  editorId: number;
-  reviewerId: number;
+  editorId: number | null;
+  reviewerId: number | null;
   currentVersion: number;
+  currentVersionId: number | null;
   reviewStatus: ReviewStatus;
   reviewerRecommendation: ReviewerRecommendation | null;
   editorDecision: EditorDecision | null;

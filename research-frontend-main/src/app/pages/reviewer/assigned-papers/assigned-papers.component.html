@@ -1,0 +1,136 @@
+<div class="assigned-page">
+  <div class="assigned-page__heading">
+    <div>
+      <h1>Assigned Papers</h1>
+      <p class="text-secondary">
+        View papers assigned to you and submit your review.
+      </p>
+    </div>
+
+    <button
+      mat-stroked-button
+      type="button"
+      (click)="loadAssignedReviews()"
+      [disabled]="loading()"
+    >
+      <mat-icon>refresh</mat-icon>
+      Refresh
+    </button>
+  </div>
+
+  <section class="assigned-page__toolbar card-surface">
+    <mat-form-field appearance="outline">
+      <mat-label>Search assigned papers</mat-label>
+
+      <mat-icon matPrefix>search</mat-icon>
+
+      <input
+        matInput
+        type="search"
+        [ngModel]="searchTerm()"
+        (ngModelChange)="updateSearch($event)"
+        placeholder="Search by paper ID, review ID or status"
+      />
+
+      <button
+        *ngIf="searchTerm()"
+        mat-icon-button
+        matSuffix
+        type="button"
+        aria-label="Clear search"
+        (click)="updateSearch('')"
+      >
+        <mat-icon>close</mat-icon>
+      </button>
+    </mat-form-field>
+
+    <div class="assigned-page__count">
+      <strong>{{ pendingReviews().length }}</strong>
+      pending assignment{{ pendingReviews().length === 1 ? '' : 's' }}
+    </div>
+  </section>
+
+  <app-loading-spinner
+    *ngIf="loading()"
+    message="Loading assigned papers..."
+  ></app-loading-spinner>
+
+  <section
+    *ngIf="!loading() && errorMessage()"
+    class="assigned-page__error card-surface"
+  >
+    <mat-icon>error_outline</mat-icon>
+
+    <div>
+      <h2>Could not load assigned papers</h2>
+      <p>{{ errorMessage() }}</p>
+
+      <button mat-flat-button color="primary" (click)="loadAssignedReviews()">
+        Try Again
+      </button>
+    </div>
+  </section>
+
+  <section
+    *ngIf="!loading() && !errorMessage()"
+    class="assigned-table card-surface"
+  >
+    <div class="assigned-table__header">
+      <span>Paper</span>
+      <span>Version</span>
+      <span>Status</span>
+      <span>Review ID</span>
+      <span>Action</span>
+    </div>
+
+    <div
+      *ngFor="let review of pendingReviews()"
+      class="assigned-table__row"
+    >
+      <div class="paper-details">
+        <div class="paper-details__icon">
+          <mat-icon>description</mat-icon>
+        </div>
+
+        <div>
+          <strong>Paper #{{ review.paperId }}</strong>
+          <span>Assigned research paper</span>
+        </div>
+      </div>
+
+      <span>Version {{ review.currentVersion }}</span>
+
+      <span class="status-badge">
+        {{ formatStatus(review.reviewStatus) }}
+      </span>
+
+      <span>#{{ review.reviewId }}</span>
+
+      <a
+        mat-flat-button
+        color="primary"
+        [routerLink]="['/reviewer/reviews', review.reviewId]"
+      >
+        <mat-icon>rate_review</mat-icon>
+        Review Paper
+      </a>
+    </div>
+
+    <div
+      *ngIf="pendingReviews().length === 0"
+      class="assigned-table__empty"
+    >
+      <mat-icon>assignment_turned_in</mat-icon>
+
+      <h2>No pending assignments</h2>
+
+      <p *ngIf="!searchTerm()">
+        You have completed all papers currently assigned to you.
+      </p>
+
+      <p *ngIf="searchTerm()">
+        No assigned papers match your search.
+      </p>
+    </div>
+  </section>
+</div>

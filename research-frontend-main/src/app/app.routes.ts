@@ -1,4 +1,6 @@
 import { Routes } from '@angular/router';
+import { RESEARCHER_ROUTES } from '@pages/researcher/researcher.routes';
+import { REVIEWER_ROUTES } from '@pages/reviewer/reviewer.routes';
 import { MainLayoutComponent } from '@layouts/main-layout/main-layout.component';
 import { AuthLayoutComponent } from '@layouts/auth-layout/auth-layout.component';
 import { authGuard } from '@core/guards/auth.guard';
@@ -48,22 +50,17 @@ export const routes: Routes = [
       {
         path: 'researcher',
         canActivate: [roleGuard],
-        data: { roles: [Role.RESEARCHER], breadcrumb: 'Researcher' },
+        data: {
+          roles: [Role.RESEARCHER],
+          breadcrumb: 'Researcher'
+        },
         children: [
-          { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
-          {
-            path: 'dashboard',
-            loadComponent: () =>
-              import('@pages/role-dashboard/role-dashboard.component').then((m) => m.RoleDashboardComponent)
-          },
-          {
-            path: 'papers',
-            loadComponent: () => import('@pages/papers/papers-page.component').then((m) => m.PapersPageComponent)
-          },
+          ...RESEARCHER_ROUTES,
           {
             path: 'notifications',
             loadComponent: () =>
-              import('@pages/notifications/notifications-page.component').then((m) => m.NotificationsPageComponent)
+              import('./features/notifications/notifications.component')
+                .then(m => m.NotificationsComponent)
           }
         ]
       },
@@ -93,33 +90,25 @@ export const routes: Routes = [
           {
             path: 'notifications',
             loadComponent: () =>
-              import('@pages/notifications/notifications-page.component').then((m) => m.NotificationsPageComponent)
+              import('./features/notifications/notifications.component')
+                .then(m => m.NotificationsComponent)
           }
         ]
       },
       {
         path: 'reviewer',
         canActivate: [roleGuard],
-        data: { roles: [Role.REVIEWER], breadcrumb: 'Reviewer' },
+        data: {
+          roles: [Role.REVIEWER],
+          breadcrumb: 'Reviewer'
+        },
         children: [
-          { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
-          {
-            path: 'dashboard',
-            loadComponent: () =>
-              import('@pages/role-dashboard/role-dashboard.component').then((m) => m.RoleDashboardComponent)
-          },
-          {
-            path: 'papers',
-            loadComponent: () => import('@pages/papers/papers-page.component').then((m) => m.PapersPageComponent)
-          },
-          {
-            path: 'reviews',
-            loadComponent: () => import('@pages/reviews/reviews-page.component').then((m) => m.ReviewsPageComponent)
-          },
+          ...REVIEWER_ROUTES,
           {
             path: 'notifications',
             loadComponent: () =>
-              import('@pages/notifications/notifications-page.component').then((m) => m.NotificationsPageComponent)
+              import('./features/notifications/notifications.component')
+                .then(m => m.NotificationsComponent)
           }
         ]
       },
@@ -143,13 +132,14 @@ export const routes: Routes = [
             loadComponent: () => import('@pages/reports/reports-page.component').then((m) => m.ReportsPageComponent)
           },
           {
-            path: 'notifications',
-            loadComponent: () =>
-              import('@pages/notifications/notifications-page.component').then((m) => m.NotificationsPageComponent)
-          },
-          {
             path: 'users',
             loadComponent: () => import('@pages/users/users-page.component').then((m) => m.UsersPageComponent)
+          },
+          {
+            path: 'notifications',
+            loadComponent: () =>
+              import('./features/notifications/notifications.component')
+                .then(m => m.NotificationsComponent)
           }
         ]
       }

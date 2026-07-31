@@ -1,0 +1,425 @@
+<div class="review-page">
+  <div class="review-page__heading">
+    <div>
+      <button
+        mat-button
+        type="button"
+        class="back-button"
+        (click)="goBack()"
+      >
+        <mat-icon>arrow_back</mat-icon>
+        Assigned Papers
+      </button>
+
+      <h1>Review Paper</h1>
+
+      <p class="text-secondary">
+        Read the assigned paper, add comments and submit your recommendation.
+      </p>
+    </div>
+  </div>
+
+  <app-loading-spinner
+    *ngIf="loading()"
+    message="Loading paper review..."
+  ></app-loading-spinner>
+
+  <section
+    *ngIf="!loading() && errorMessage()"
+    class="error-card card-surface"
+  >
+    <mat-icon>error_outline</mat-icon>
+
+    <div>
+      <h2>Could not load review</h2>
+      <p>{{ errorMessage() }}</p>
+
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        (click)="loadReview()"
+      >
+        Try Again
+      </button>
+    </div>
+  </section>
+
+  <ng-container
+    *ngIf="!loading() && !errorMessage() && review() && paper()"
+  >
+    <section class="paper-header card-surface">
+      <div class="paper-header__main">
+        <div class="paper-header__icon">
+          <mat-icon>article</mat-icon>
+        </div>
+
+        <div>
+          <div class="paper-header__badges">
+            <span class="status-badge">
+              {{ formatValue(review()?.reviewStatus) }}
+            </span>
+
+            <span class="version-badge">
+              Version {{ review()?.currentVersion }}
+            </span>
+          </div>
+
+          <h2>{{ paper()?.title }}</h2>
+
+          <p>
+            Review #{{ review()?.reviewId }}
+            · Paper #{{ paper()?.id }}
+          </p>
+        </div>
+      </div>
+
+      <div
+        class="completion-badge"
+        *ngIf="isReviewCompleted()"
+      >
+        <mat-icon>task_alt</mat-icon>
+
+        {{ formatValue(review()?.reviewerRecommendation) }}
+      </div>
+    </section>
+
+    <div class="review-layout">
+      <main class="review-layout__main">
+        <section class="paper-details card-surface">
+          <div class="section-heading">
+            <div>
+              <h2>Paper Details</h2>
+              <p>Information provided by the researcher.</p>
+            </div>
+          </div>
+
+          <div class="paper-details__grid">
+            <div class="detail-item">
+              <span class="detail-item__label">Author</span>
+              <strong>
+                {{ paper()?.authorName || 'Not available' }}
+              </strong>
+            </div>
+
+            <div class="detail-item">
+              <span class="detail-item__label">Paper status</span>
+              <strong>
+                {{ formatValue(paper()?.status) }}
+              </strong>
+            </div>
+
+            <div class="detail-item detail-item--full">
+              <span class="detail-item__label">Co-authors</span>
+
+              <div
+                class="co-authors"
+                *ngIf="paper()?.coAuthors?.length; else noCoAuthors"
+              >
+                <span
+                  *ngFor="let coAuthor of paper()?.coAuthors"
+                  class="co-author"
+                >
+                  {{ coAuthor }}
+                </span>
+              </div>
+
+              <ng-template #noCoAuthors>
+                <strong>No co-authors listed</strong>
+              </ng-template>
+            </div>
+
+            <div class="detail-item detail-item--full">
+              <span class="detail-item__label">
+                Description / Abstract
+              </span>
+
+              <p class="paper-description">
+                {{ paper()?.description || 'No description available.' }}
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section class="paper-content card-surface">
+          <div class="section-heading">
+            <div>
+              <h2>Current Paper Version</h2>
+
+              <p>
+                Version {{ review()?.currentVersion }}
+              </p>
+            </div>
+
+            <button
+              mat-stroked-button
+              type="button"
+              (click)="loadVersionContent()"
+              [disabled]="loadingContent() || !review()?.currentVersionId"
+            >
+              <mat-icon>refresh</mat-icon>
+              Load Content
+            </button>
+          </div>
+
+          <app-loading-spinner
+            *ngIf="loadingContent()"
+            message="Loading paper content..."
+          ></app-loading-spinner>
+
+          <div
+            *ngIf="!loadingContent() && contentError()"
+            class="content-message"
+          >
+            <mat-icon>description</mat-icon>
+            <p>{{ contentError() }}</p>
+          </div>
+
+          <pre
+            *ngIf="!loadingContent() && versionContent()"
+            class="paper-content__viewer"
+          >{{ versionContent() }}</pre>
+
+          <div
+            *ngIf="
+              !loadingContent() &&
+              !versionContent() &&
+              !contentError()
+            "
+            class="content-message"
+          >
+            <mat-icon>picture_as_pdf</mat-icon>
+            <p>Select “Load Content” to view the current version.</p>
+          </div>
+        </section>
+
+        <section class="comments-section card-surface">
+          <div class="section-heading">
+            <div>
+              <h2>Review Comments</h2>
+
+              <p>
+                Add clear and constructive feedback for the researcher.
+              </p>
+            </div>
+
+            <span class="comment-count">
+              {{ comments().length }}
+              comment{{ comments().length === 1 ? '' : 's' }}
+            </span>
+          </div>
+
+          <div
+            class="comments-list"
+            *ngIf="comments().length; else noComments"
+          >
+            <article
+              class="comment-card"
+              *ngFor="let comment of comments()"
+            >
+              <div class="comment-card__avatar">
+                <mat-icon>person</mat-icon>
+              </div>
+
+              <div class="comment-card__body">
+                <div class="comment-card__header">
+                  <strong>
+                    Reviewer #{{ comment.reviewerId }}
+                  </strong>
+
+                  <span>
+                    {{ formatDate(comment.createdDate) }}
+                  </span>
+                </div>
+
+                <p>{{ comment.comment }}</p>
+              </div>
+            </article>
+          </div>
+
+          <ng-template #noComments>
+            <div class="empty-comments">
+              <mat-icon>forum</mat-icon>
+              <p>No comments have been added yet.</p>
+            </div>
+          </ng-template>
+
+          <mat-divider></mat-divider>
+
+          <form
+            class="comment-form"
+            [formGroup]="commentForm"
+            (ngSubmit)="submitComment()"
+          >
+            <mat-form-field appearance="outline">
+              <mat-label>Add review comment</mat-label>
+
+              <textarea
+                matInput
+                rows="6"
+                formControlName="comment"
+                placeholder="Describe strengths, issues and required changes..."
+              ></textarea>
+
+              <mat-hint align="end">
+                {{ commentForm.controls.comment.value.length }}/3000
+              </mat-hint>
+
+              <mat-error
+                *ngIf="
+                  commentForm.controls.comment.hasError('required')
+                "
+              >
+                A review comment is required.
+              </mat-error>
+
+              <mat-error
+                *ngIf="
+                  commentForm.controls.comment.hasError('minlength')
+                "
+              >
+                Enter at least 10 characters.
+              </mat-error>
+            </mat-form-field>
+
+            <button
+              mat-flat-button
+              color="primary"
+              type="submit"
+              [disabled]="
+                submittingComment() ||
+                !review()?.currentVersionId
+              "
+            >
+              <mat-icon>add_comment</mat-icon>
+
+              {{
+              submittingComment()
+              ? 'Adding Comment...'
+              : 'Add Comment'
+              }}
+            </button>
+          </form>
+        </section>
+      </main>
+
+      <aside class="review-layout__sidebar">
+        <section class="recommendation-card card-surface">
+          <div class="section-heading">
+            <div>
+              <h2>Recommendation</h2>
+              <p>Submit your final review decision.</p>
+            </div>
+          </div>
+
+          <div
+            class="submitted-recommendation"
+            *ngIf="isReviewCompleted()"
+          >
+            <mat-icon>task_alt</mat-icon>
+
+            <div>
+              <span>Submitted recommendation</span>
+
+              <strong>
+                {{
+                formatValue(
+                review()?.reviewerRecommendation
+                )
+                }}
+              </strong>
+            </div>
+          </div>
+
+          <form
+            [formGroup]="recommendationForm"
+            (ngSubmit)="submitRecommendation()"
+          >
+            <mat-form-field appearance="outline">
+              <mat-label>Select recommendation</mat-label>
+
+              <mat-select formControlName="recommendation">
+                <mat-option
+                  *ngFor="let option of recommendationOptions"
+                  [value]="option.value"
+                >
+                  {{ option.label }}
+                </mat-option>
+              </mat-select>
+
+              <mat-error>
+                Select a recommendation.
+              </mat-error>
+            </mat-form-field>
+
+            <div class="recommendation-help">
+              <div
+                class="recommendation-option"
+                *ngFor="let option of recommendationOptions"
+              >
+                <mat-icon>{{ option.icon }}</mat-icon>
+
+                <div>
+                  <strong>{{ option.label }}</strong>
+                  <p>{{ option.description }}</p>
+                </div>
+              </div>
+            </div>
+
+            <button
+              mat-flat-button
+              color="primary"
+              type="submit"
+              class="submit-recommendation"
+              [disabled]="
+                submittingRecommendation() ||
+                isReviewCompleted()
+              "
+            >
+              <mat-icon>send</mat-icon>
+
+              {{
+              submittingRecommendation()
+              ? 'Submitting...'
+              : isReviewCompleted()
+              ? 'Recommendation Submitted'
+              : 'Submit Recommendation'
+              }}
+            </button>
+          </form>
+
+          <p class="recommendation-warning">
+            <mat-icon>info</mat-icon>
+            A submitted recommendation cannot be changed from this page.
+          </p>
+        </section>
+
+        <section class="review-info card-surface">
+          <h3>Review Information</h3>
+
+          <div class="review-info__row">
+            <span>Review ID</span>
+            <strong>#{{ review()?.reviewId }}</strong>
+          </div>
+
+          <div class="review-info__row">
+            <span>Paper ID</span>
+            <strong>#{{ review()?.paperId }}</strong>
+          </div>
+
+          <div class="review-info__row">
+            <span>Version</span>
+            <strong>{{ review()?.currentVersion }}</strong>
+          </div>
+
+          <div class="review-info__row">
+            <span>Status</span>
+            <strong>
+              {{ formatValue(review()?.reviewStatus) }}
+            </strong>
+          </div>
+        </section>
+      </aside>
+    </div>
+  </ng-container>
+</div>
