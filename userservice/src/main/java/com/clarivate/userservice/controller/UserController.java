@@ -36,6 +36,12 @@ public class UserController {
         return ResponseEntity.ok(service.getAllUsers());
     }
 
+    // GET /users/search?q=...
+    @GetMapping("/search")
+    public ResponseEntity<List<UserResponse>> searchUsers(@RequestParam(name = "q", required = false) String query) {
+        return ResponseEntity.ok(service.searchUsers(query));
+    }
+
     @PostMapping("/login")
     public ResponseEntity<UserLoginResponse> login(@Valid @RequestBody UserLoginRequest request)
             throws ResourceNotFoundException {

@@ -53,6 +53,23 @@ public class UserServiceImp implements UserService {
     }
 
     @Override
+    public List<UserResponse> searchUsers(String query) {
+        if (query == null || query.isBlank()) {
+            return getAllUsers();
+        }
+
+        String normalizedQuery = query.trim();
+        return repo.findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCaseOrEmailContainingIgnoreCase(
+                        normalizedQuery,
+                        normalizedQuery,
+                        normalizedQuery
+                )
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
     public UserResponse getUserById(Long id) throws ResourceNotFoundException {
 
         User user = repo.findById(id)

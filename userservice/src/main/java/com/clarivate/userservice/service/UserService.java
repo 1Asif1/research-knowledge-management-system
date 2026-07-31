@@ -16,6 +16,8 @@ public interface UserService {
 
     List<UserResponse> getAllUsers();
 
+    List<UserResponse> searchUsers(String query);
+
     UserResponse getUserById(Long id) throws ResourceNotFoundException;
 
     UserResponse getUserByEmail(String email) throws ResourceNotFoundException;
