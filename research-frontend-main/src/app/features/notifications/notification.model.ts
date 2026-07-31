@@ -13,7 +13,7 @@ export interface AppNotification {
   title: string;
   message: string;
   type: NotificationType;
-  read: boolean;
+  isRead: boolean;
   createdAt: string;
   actionUrl?: string;
 }

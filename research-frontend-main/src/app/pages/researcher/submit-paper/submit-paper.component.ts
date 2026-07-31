@@ -90,13 +90,12 @@ export class SubmitPaperComponent {
     this.submitting.set(true);
     const { title, abstractText } = this.form.getRawValue();
 
-    this.researcherService.submitPaper({
+    this.researcherService.submitPaper(
       title,
       abstractText,
-      fileName: file.name,
-      filePath: `/uploads/${file.name}`,
-      researcherId: user.id
-    }).subscribe({
+      user.id,
+      file
+    ).subscribe({
       next: (response: PaperSubmissionResponse) => {
         this.submitting.set(false);
         this.snackbar.success('Paper submitted successfully.');

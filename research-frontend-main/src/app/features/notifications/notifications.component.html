@@ -118,7 +118,7 @@
     <article
       *ngFor="let notification of filteredNotifications()"
       class="notification-card"
-      [class.notification-card--unread]="!notification.read"
+      [class.notification-card--unread]="!notification.isRead"
     >
       <div
         class="notification-icon"
@@ -136,7 +136,7 @@
               <h2>{{ notification.title }}</h2>
 
               <span
-                *ngIf="!notification.read"
+                *ngIf="!notification.isRead"
                 class="unread-badge"
               >
                 Unread
@@ -166,7 +166,7 @@
           </a>
 
           <button
-            *ngIf="!notification.read"
+            *ngIf="!notification.isRead"
             mat-button
             type="button"
             (click)="markAsRead(notification.id)"
@@ -178,7 +178,7 @@
       </div>
 
       <span
-        *ngIf="!notification.read"
+        *ngIf="!notification.isRead"
         class="unread-indicator"
         aria-label="Unread notification"
       ></span>

@@ -76,11 +76,7 @@ export class UploadVersionComponent {
     const { changeSummary } = this.form.getRawValue();
 
     this.researcherService
-      .uploadNewVersion(this.paperId, {
-        fileName: file.name,
-        filePath: `/uploads/${file.name}`,
-        changeSummary
-      })
+      .uploadNewVersion(this.paperId, file, changeSummary)
       .subscribe({
         next: () => {
           this.submitting.set(false);

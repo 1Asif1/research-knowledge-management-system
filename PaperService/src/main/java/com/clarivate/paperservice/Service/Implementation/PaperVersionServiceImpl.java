@@ -3,13 +3,17 @@ package com.clarivate.paperservice.Service.Implementation;
 import com.clarivate.paperservice.Dto.Response.PaperResponse;
 import com.clarivate.paperservice.Entity.Paper;
 import com.clarivate.paperservice.Entity.PaperVersion;
+import com.clarivate.paperservice.Exception.ResourceNotFoundException;
 import com.clarivate.paperservice.Repository.PaperRepository;
 import com.clarivate.paperservice.Repository.PaperVersionRepository;
+import com.clarivate.paperservice.Service.Interface.FileStorageService;
 import com.clarivate.paperservice.Service.Interface.PaperVersionService;
+import com.clarivate.paperservice.Util.FileUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 
@@ -22,10 +26,13 @@ public class PaperVersionServiceImpl implements PaperVersionService {
     @Autowired
     private PaperRepository paperRepository;
 
+    @Autowired
+    private FileStorageService fileStorageService;
+
     @Override
     public void uploadPaperVersion(Long paperId, String description) {
         Paper paper = paperRepository.findById(paperId)
-                .orElseThrow(() -> new RuntimeException("Paper not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Paper not found"));
         Integer nextVersion = paperVersionRepository.findByPaperId(paperId)
                 .stream()
                 .map(PaperVersion::getVersion)
@@ -41,11 +48,12 @@ public class PaperVersionServiceImpl implements PaperVersionService {
 
     @Override
     public void updatePaperVersion(Long paperId, MultipartFile file, String description) {
+        FileUtil.validatePdfFile(file);
+
         Paper paper = paperRepository.findById(paperId)
-                .orElseThrow(() -> new RuntimeException("Paper not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Paper not found"));
 
         PaperVersion version = new PaperVersion();
-        // Handle file upload logic here
         version.setPaper(paper);
         version.setDescription(description);
 
@@ -55,7 +63,16 @@ public class PaperVersionServiceImpl implements PaperVersionService {
                 .max(Integer::compareTo)
                 .orElse(0) + 1;
 
+        String storedFileName;
+        try {
+            storedFileName = fileStorageService.storeFile(file);
+        } catch (IOException ex) {
+            throw new IllegalStateException("Failed to store manuscript file", ex);
+        }
+
         version.setVersion(nextVersion);
+        version.setFileName(storedFileName);
+        version.setFilePath("/uploads/" + storedFileName);
 
         paperVersionRepository.save(version);
     }
@@ -69,14 +86,16 @@ public class PaperVersionServiceImpl implements PaperVersionService {
     @Override
     public String getPaperVersionContent(Integer versionNumber, Long paperId) {
         PaperVersion paperVersion = paperVersionRepository.findByPaperIdAndVersion(paperId, versionNumber);
-        return paperVersion != null ? paperVersion.toString() : "Paper version not found";
+        if (paperVersion == null) {
+            throw new ResourceNotFoundException("Paper version not found");
+        }
+        return paperVersion.toString();
     }
 
     public List<PaperResponse> findByPaperId(Long paperId) {
         return paperVersionRepository.findByPaperId(paperId)
                 .stream()
-                .map(paperVersion -> new PaperResponse(
-                ))
+                .map(paperVersion -> new PaperResponse(paperVersion.getPaper()))
                 .toList();
     }
 }

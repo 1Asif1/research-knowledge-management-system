@@ -31,6 +31,15 @@ public class Paper {
 
     private String author;
 
+    @Column(name = "file_name")
+    private String fileName;
+
+    @Column(name = "file_path")
+    private String filePath;
+
+    @Column(name = "review_paper_id")
+    private Long reviewPaperId;
+
     @Lob
     @Column(name="file_data")
     private byte[] fileData;

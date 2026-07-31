@@ -5,7 +5,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 @Entity
-@Table(name = "paper_versions")
+@Table(name = "paper_service_versions")
 @Data
 public class PaperVersion {
 
@@ -22,12 +22,18 @@ public class PaperVersion {
 
     private String description;
 
+    private String fileName;
+
+    private String filePath;
+
     @Override
     public String toString() {
         return "PaperVersion{" +
                 "id=" + id +
                 ", version=" + version +
                 ", description='" + description + '\'' +
+                ", fileName='" + fileName + '\'' +
+                ", filePath='" + filePath + '\'' +
                 '}';
     }
 }

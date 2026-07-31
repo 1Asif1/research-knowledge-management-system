@@ -6,7 +6,7 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "paper_versions")
+@Table(name = "review_paper_versions")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -19,7 +19,7 @@ public class PaperVersion {
     private Long versionId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "paper_id", nullable = false)
+    @JoinColumn(name = "paper_submission_id", nullable = false)
     private PaperSubmission paperSubmission;
 
     @Column(nullable = false)

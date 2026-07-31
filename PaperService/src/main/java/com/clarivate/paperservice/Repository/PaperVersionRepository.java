@@ -8,4 +8,5 @@ import java.util.List;
 public interface PaperVersionRepository extends JpaRepository<PaperVersion, Long> {
     List<PaperVersion> findByPaperId(Long paperId);
     PaperVersion findByPaperIdAndVersion(Long paperId, Integer version);
+    PaperVersion findTopByPaperIdOrderByVersionDesc(Long paperId);
 }

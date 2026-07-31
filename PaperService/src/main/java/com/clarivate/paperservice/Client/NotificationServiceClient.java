@@ -1,5 +1,6 @@
 package com.clarivate.paperservice.Client;
 
+import com.clarivate.paperservice.Dto.Request.NotificationCreateRequest;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -8,5 +9,5 @@ import org.springframework.web.bind.annotation.RequestBody;
 public interface NotificationServiceClient {
     
     @PostMapping("/notifications")
-    Object sendNotification(@RequestBody Object notificationRequest);
+    void sendNotification(@RequestBody NotificationCreateRequest notificationRequest);
 }

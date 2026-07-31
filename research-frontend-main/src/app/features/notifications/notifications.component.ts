@@ -1,10 +1,13 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  OnInit,
   computed,
+  inject,
   signal
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 
@@ -13,10 +16,16 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { forkJoin } from 'rxjs';
+
+import { NotificationService } from '@core/services/notification.service';
+import { TokenStorageService } from '@core/services/token-storage.service';
+import { NotificationResponse, NotificationType as BackendNotificationType, Role } from '@core/models';
+import { SnackbarService } from '@shared/services/snackbar.service';
 
 import {
   AppNotification,
-  NotificationType
+  NotificationType as AppNotificationType
 } from './notification.model';
 
 type NotificationFilter = 'ALL' | 'UNREAD' | 'READ';
@@ -38,77 +47,15 @@ type NotificationFilter = 'ALL' | 'UNREAD' | 'READ';
   styleUrl: './notifications.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class NotificationsComponent {
+export class NotificationsComponent implements OnInit {
+  private readonly notificationService = inject(NotificationService);
+  private readonly tokenStorage = inject(TokenStorageService);
+  private readonly snackbar = inject(SnackbarService);
+
   readonly loading = signal(false);
   readonly searchTerm = signal('');
   readonly selectedFilter = signal<NotificationFilter>('ALL');
-
-  readonly notifications = signal<AppNotification[]>([
-    {
-      id: 1,
-      recipientId: 4,
-      title: 'New paper assigned',
-      message:
-        'You have been assigned to review "Artificial Intelligence in Healthcare".',
-      type: 'ASSIGNMENT',
-      read: false,
-      createdAt: new Date(
-        Date.now() - 2 * 60 * 60 * 1000
-      ).toISOString(),
-      actionUrl: '/reviewer/assigned-papers'
-    },
-    {
-      id: 2,
-      recipientId: 4,
-      title: 'Paper revision submitted',
-      message:
-        'The researcher uploaded version 2 of an assigned paper.',
-      type: 'REVISION',
-      read: false,
-      createdAt: new Date(
-        Date.now() - 24 * 60 * 60 * 1000
-      ).toISOString(),
-      actionUrl: '/reviewer/assigned-papers'
-    },
-    {
-      id: 3,
-      recipientId: 4,
-      title: 'Review deadline approaching',
-      message:
-        'Your review is due in two days. Please submit your recommendation.',
-      type: 'REMINDER',
-      read: false,
-      createdAt: new Date(
-        Date.now() - 2 * 24 * 60 * 60 * 1000
-      ).toISOString(),
-      actionUrl: '/reviewer/assigned-papers'
-    },
-    {
-      id: 4,
-      recipientId: 4,
-      title: 'Review submitted successfully',
-      message:
-        'Your recommendation has been recorded successfully.',
-      type: 'SUCCESS',
-      read: true,
-      createdAt: new Date(
-        Date.now() - 4 * 24 * 60 * 60 * 1000
-      ).toISOString(),
-      actionUrl: '/reviewer/reviewed-papers'
-    },
-    {
-      id: 5,
-      recipientId: 4,
-      title: 'System notification',
-      message:
-        'Your profile information was updated successfully.',
-      type: 'INFO',
-      read: true,
-      createdAt: new Date(
-        Date.now() - 7 * 24 * 60 * 60 * 1000
-      ).toISOString()
-    }
-  ]);
+  readonly notifications = signal<AppNotification[]>([]);
 
   readonly filteredNotifications = computed(() => {
     const search = this.searchTerm().trim().toLowerCase();
@@ -116,11 +63,11 @@ export class NotificationsComponent {
 
     return this.notifications()
       .filter((notification) => {
-        if (filter === 'UNREAD' && notification.read) {
+        if (filter === 'UNREAD' && notification.isRead) {
           return false;
         }
 
-        if (filter === 'READ' && !notification.read) {
+        if (filter === 'READ' && !notification.isRead) {
           return false;
         }
 
@@ -151,7 +98,7 @@ export class NotificationsComponent {
   readonly unreadCount = computed(
     () =>
       this.notifications().filter(
-        (notification) => !notification.read
+        (notification) => !notification.isRead
       ).length
   );
 
@@ -163,6 +110,10 @@ export class NotificationsComponent {
       ).length
   );
 
+  ngOnInit(): void {
+    this.loadNotifications();
+  }
+
   updateSearch(value: string): void {
     this.searchTerm.set(value);
   }
@@ -172,33 +123,59 @@ export class NotificationsComponent {
   }
 
   markAsRead(notificationId: number): void {
-    this.notifications.update((notifications) =>
-      notifications.map((notification) =>
-        notification.id === notificationId
-          ? {
-              ...notification,
-              read: true
-            }
-          : notification
-      )
-    );
+    const target = this.notifications().find((notification) => notification.id === notificationId);
+    if (!target || target.isRead) {
+      return;
+    }
+
+    this.notificationService.markAsRead(notificationId).subscribe({
+      next: () => {
+        this.notifications.update((notifications) =>
+          notifications.map((notification) =>
+            notification.id === notificationId
+              ? {
+                ...notification,
+                isRead: true
+              }
+              : notification
+          )
+        );
+      },
+      error: (error: HttpErrorResponse) => {
+        this.snackbar.error(error.error?.message ?? 'Failed to update notification.');
+      }
+    });
   }
 
   markAllAsRead(): void {
-    this.notifications.update((notifications) =>
-      notifications.map((notification) => ({
-        ...notification,
-        read: true
-      }))
-    );
+    const unreadIds = this.notifications()
+      .filter((notification) => !notification.isRead)
+      .map((notification) => notification.id);
+
+    if (!unreadIds.length) {
+      return;
+    }
+
+    this.loading.set(true);
+    forkJoin(unreadIds.map((id) => this.notificationService.markAsRead(id))).subscribe({
+      next: () => {
+        this.notifications.update((notifications) =>
+          notifications.map((notification) => ({
+            ...notification,
+            isRead: true
+          }))
+        );
+        this.loading.set(false);
+      },
+      error: (error: HttpErrorResponse) => {
+        this.loading.set(false);
+        this.snackbar.error(error.error?.message ?? 'Failed to mark all notifications as read.');
+      }
+    });
   }
 
   refreshNotifications(): void {
-    this.loading.set(true);
-
-    setTimeout(() => {
-      this.loading.set(false);
-    }, 500);
+    this.loadNotifications();
   }
 
   clearFilters(): void {
@@ -206,56 +183,44 @@ export class NotificationsComponent {
     this.selectedFilter.set('ALL');
   }
 
-  getNotificationIcon(type: NotificationType): string {
+  getNotificationIcon(type: AppNotificationType): string {
     switch (type) {
       case 'ASSIGNMENT':
         return 'assignment';
-
       case 'SUBMISSION':
         return 'upload_file';
-
       case 'REVISION':
         return 'published_with_changes';
-
       case 'DECISION':
         return 'gavel';
-
       case 'REMINDER':
         return 'schedule';
-
       case 'SUCCESS':
         return 'verified';
-
       case 'INFO':
       default:
         return 'notifications';
     }
   }
 
-  getNotificationClass(type: NotificationType): string {
+  getNotificationClass(type: AppNotificationType): string {
     return `notification-icon--${type.toLowerCase()}`;
   }
 
-  getActionLabel(type: NotificationType): string {
+  getActionLabel(type: AppNotificationType): string {
     switch (type) {
       case 'ASSIGNMENT':
         return 'View Assignment';
-
       case 'SUBMISSION':
         return 'View Submission';
-
       case 'REVISION':
         return 'View Revision';
-
       case 'DECISION':
         return 'View Decision';
-
       case 'REMINDER':
         return 'Open Review';
-
       case 'SUCCESS':
         return 'View Details';
-
       default:
         return 'Open';
     }
@@ -293,5 +258,77 @@ export class NotificationsComponent {
     }
 
     return new Date(createdAt).toLocaleDateString();
+  }
+
+  private loadNotifications(): void {
+    const user = this.tokenStorage.getUser();
+    if (!user) {
+      this.notifications.set([]);
+      this.snackbar.error('Your session has expired. Please sign in again.');
+      return;
+    }
+
+    this.loading.set(true);
+    this.notificationService.getNotificationsByUserId(user.id).subscribe({
+      next: (responses: NotificationResponse[]) => {
+        this.notifications.set(responses.map((response) => this.mapNotification(response, user.role)));
+        this.loading.set(false);
+      },
+      error: (error: HttpErrorResponse) => {
+        this.loading.set(false);
+        this.notifications.set([]);
+        this.snackbar.error(error.error?.message ?? 'Failed to load notifications.');
+      }
+    });
+  }
+
+  private mapNotification(response: NotificationResponse, role: Role): AppNotification {
+    return {
+      id: response.id,
+      recipientId: response.userId,
+      title: response.title,
+      message: response.message,
+      type: this.mapNotificationType(response.type),
+      isRead: response.isRead,
+      createdAt: response.createdAt,
+      actionUrl: this.resolveActionUrl(role, response.type)
+    };
+  }
+
+  private mapNotificationType(type: BackendNotificationType): AppNotificationType {
+    switch (type) {
+      case BackendNotificationType.REVIEW_ASSIGNED:
+        return 'ASSIGNMENT';
+      case BackendNotificationType.PAPER_SUBMITTED:
+        return 'SUBMISSION';
+      case BackendNotificationType.REVISION_REQUESTED:
+        return 'REVISION';
+      case BackendNotificationType.PAPER_APPROVED:
+      case BackendNotificationType.PAPER_REJECTED:
+        return 'DECISION';
+      case BackendNotificationType.REVIEW_COMPLETED:
+      case BackendNotificationType.PAPER_PUBLISHED:
+        return 'SUCCESS';
+      default:
+        return 'INFO';
+    }
+  }
+
+  private resolveActionUrl(role: Role, type: BackendNotificationType): string {
+    if (role === Role.REVIEWER) {
+      return type === BackendNotificationType.REVIEW_ASSIGNED
+        ? '/reviewer/assigned-papers'
+        : '/reviewer/dashboard';
+    }
+
+    if (role === Role.EDITOR) {
+      return '/editor/reviews';
+    }
+
+    if (role === Role.ADMIN) {
+      return '/admin/dashboard';
+    }
+
+    return '/researcher/papers';
   }
 }
