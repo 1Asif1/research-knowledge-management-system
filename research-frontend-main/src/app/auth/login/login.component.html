@@ -1,0 +1,45 @@
+<div class="auth-card">
+  <h2>Sign in</h2>
+
+  <div class="auth-card__error" *ngIf="errorMessage()">
+    <mat-icon>error_outline</mat-icon>
+    <span>{{ errorMessage() }}</span>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="submit()" class="auth-form">
+    <mat-form-field appearance="outline" class="auth-form__field">
+      <mat-label>Email address</mat-label>
+      <input matInput type="email" formControlName="email" autocomplete="email" placeholder="you@institution.edu" />
+      <mat-error *ngIf="form.controls.email.hasError('required')">Email is required</mat-error>
+      <mat-error *ngIf="form.controls.email.hasError('email')">Enter a valid email address</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="auth-form__field">
+      <mat-label>Password</mat-label>
+      <input
+        matInput
+        [type]="hidePassword() ? 'password' : 'text'"
+        formControlName="password"
+        autocomplete="current-password"
+        placeholder="••••••••"
+      />
+      <mat-error *ngIf="form.controls.password.hasError('required')">Password is required</mat-error>
+      <mat-error *ngIf="form.controls.password.hasError('minlength')">Password must be at least 6 characters</mat-error>
+    </mat-form-field>
+
+    <button
+      mat-flat-button
+      color="primary"
+      type="submit"
+      class="auth-form__submit"
+      [disabled]="loading()"
+    >
+      <mat-spinner *ngIf="loading()" diameter="20" strokeWidth="3"></mat-spinner>
+      <span *ngIf="!loading()">Sign in</span>
+    </button>
+  </form>
+
+  <p class="auth-card__footnote">
+    No account? <a routerLink="/auth/register">Register</a>
+  </p>
+</div>

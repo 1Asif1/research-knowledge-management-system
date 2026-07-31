@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.Map;
 
 @Component
 public class JwtTokenProvider {
@@ -28,6 +29,10 @@ public class JwtTokenProvider {
     }
 
     public String generateToken(String username, String role) {
+        return generateToken(username, role, Map.of());
+    }
+
+    public String generateToken(String username, String role, Map<String, Object> additionalClaims) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + jwtConfig.getExpiration());
 
@@ -35,6 +40,10 @@ public class JwtTokenProvider {
                 .subject(username)
                 .issuedAt(now)
                 .expiration(expiry);
+
+        if (additionalClaims != null && !additionalClaims.isEmpty()) {
+            additionalClaims.forEach(builder::claim);
+        }
 
         if (role != null) {
             builder.claim("role", role);
@@ -55,6 +64,25 @@ public class JwtTokenProvider {
     public String getRole(String token) {
         Claims claims = parseClaims(token);
         return claims.get("role", String.class);
+    }
+
+    public String getFirstName(String token) {
+        return parseClaims(token).get("firstname", String.class);
+    }
+
+    public String getLastName(String token) {
+        return parseClaims(token).get("lastname", String.class);
+    }
+
+    public Long getUserId(String token) {
+        Object value = parseClaims(token).get("userId");
+        if (value instanceof Number number) {
+            return number.longValue();
+        }
+        if (value instanceof String stringValue && !stringValue.isBlank()) {
+            return Long.parseLong(stringValue);
+        }
+        return null;
     }
 
     public boolean isTokenValid(String token) {

@@ -1,0 +1,16 @@
+<header class="navbar">
+  <div class="navbar__brand">
+    <h1>RKMS</h1>
+    <p>RESEARCH KNOWLEDGE MANAGEMENT SYSTEM · API GATEWAY PREVIEW</p>
+  </div>
+
+  <div class="navbar__actions">
+    <label class="navbar__preview">
+      <span>Preview as</span>
+      <select [value]="activeRole()" (change)="onRoleChange($any($event.target).value)">
+        <option *ngFor="let role of roleOptions" [value]="role">{{ role }}</option>
+      </select>
+    </label>
+    <button type="button" class="navbar__logout" (click)="logout()">Logout</button>
+  </div>
+</header>

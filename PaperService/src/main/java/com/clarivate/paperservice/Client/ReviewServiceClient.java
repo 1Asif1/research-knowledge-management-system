@@ -7,6 +7,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 @FeignClient(name = "review-service", url = "${review-service.url:http://localhost:8085}")
 public interface ReviewServiceClient {
     
-    @GetMapping("/review/paper/{paperId}")
+    @GetMapping("/api/researcher/papers/{paperId}")
     Object getReviewsByPaper(@PathVariable Long paperId);
 }

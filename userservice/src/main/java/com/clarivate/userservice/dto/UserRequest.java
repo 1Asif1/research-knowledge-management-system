@@ -12,6 +12,7 @@ public record UserRequest(
         String lastName,
 
         @Email
+        @NotBlank
         String email,
 
         @NotBlank

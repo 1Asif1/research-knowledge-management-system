@@ -1,0 +1,64 @@
+<div class="submit-paper">
+  <div class="submit-paper__header">
+    <h1>Submit a New Paper</h1>
+    <p class="text-secondary">Provide your manuscript details and attach the PDF for review.</p>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="submit()" class="submit-paper__form card-surface">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Paper Title</mat-label>
+      <input matInput formControlName="title" placeholder="e.g. Advances in Federated Learning for Healthcare" />
+      <mat-error *ngIf="form.controls.title.hasError('required')">Title is required</mat-error>
+      <mat-error *ngIf="form.controls.title.hasError('maxlength')">Title is too long</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Abstract</mat-label>
+      <textarea
+        matInput
+        rows="8"
+        formControlName="abstractText"
+        placeholder="Summarize your research objectives, methodology, and findings..."
+      ></textarea>
+      <mat-hint align="end">{{ form.controls.abstractText.value.length }}/3000</mat-hint>
+      <mat-error *ngIf="form.controls.abstractText.hasError('required')">Abstract is required</mat-error>
+    </mat-form-field>
+
+    <div class="submit-paper__upload">
+      <label class="submit-paper__upload-label">Manuscript File (PDF)</label>
+
+      <div class="submit-paper__dropzone" *ngIf="!selectedFile()">
+        <input type="file" accept="application/pdf" (change)="onFileSelected($event)" id="file-input" hidden />
+        <label for="file-input" class="submit-paper__dropzone-label">
+          <mat-icon>cloud_upload</mat-icon>
+          <span>Click to upload, or drag a PDF here</span>
+          <small>Maximum file size: 25MB</small>
+        </label>
+      </div>
+
+      <div class="submit-paper__file" *ngIf="selectedFile() as file">
+        <mat-icon>picture_as_pdf</mat-icon>
+        <div class="submit-paper__file-info">
+          <strong>{{ file.name }}</strong>
+          <small>{{ (file.size / 1024 / 1024).toFixed(2) }} MB</small>
+        </div>
+        <button mat-icon-button type="button" (click)="removeFile()" aria-label="Remove file">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <p class="submit-paper__file-error" *ngIf="fileError()">{{ fileError() }}</p>
+    </div>
+
+    <mat-progress-bar *ngIf="submitting()" mode="indeterminate"></mat-progress-bar>
+
+    <div class="submit-paper__actions">
+      <button mat-stroked-button type="button" routerLink="/researcher/dashboard" [disabled]="submitting()">
+        Cancel
+      </button>
+      <button mat-flat-button color="primary" type="submit" [disabled]="submitting()">
+        {{ submitting() ? 'Submitting...' : 'Submit Paper' }}
+      </button>
+    </div>
+  </form>
+</div>

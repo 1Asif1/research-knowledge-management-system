@@ -1,0 +1,40 @@
+<div class="my-papers">
+  <div class="my-papers__header">
+    <div>
+      <h1>My Papers</h1>
+      <p class="text-secondary">All manuscripts you've submitted for review.</p>
+    </div>
+    <button mat-flat-button color="primary" routerLink="/researcher/submit">
+      <mat-icon>note_add</mat-icon>
+      Submit New Paper
+    </button>
+  </div>
+
+  <div class="my-papers__toolbar">
+    <app-search-bar placeholder="Search your papers..." (searchChange)="onSearch($event)"></app-search-bar>
+  </div>
+
+  <app-loading-spinner *ngIf="loading()" message="Loading your papers..."></app-loading-spinner>
+
+  <ng-container *ngIf="!loading()">
+    <div class="my-papers__grid" *ngIf="filteredPapers().length; else emptyState">
+      <app-paper-card
+        *ngFor="let paper of filteredPapers()"
+        [title]="paper.title"
+        [date]="paper.submittedDate"
+        [statusLabel]="reviewStatusLabel(paper.reviewStatus ?? 'SUBMITTED')"
+        [statusIntent]="reviewStatusIntent(paper.reviewStatus ?? 'SUBMITTED')"
+        (view)="openPaper(paper.paperId)"
+      ></app-paper-card>
+    </div>
+
+    <ng-template #emptyState>
+      <div class="my-papers__empty card-surface">
+        <mat-icon>description</mat-icon>
+        <h3>No papers found</h3>
+        <p class="text-secondary">Try a different search, or submit your first paper.</p>
+        <button mat-stroked-button routerLink="/researcher/submit">Submit New Paper</button>
+      </div>
+    </ng-template>
+  </ng-container>
+</div>

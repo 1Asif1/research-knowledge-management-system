@@ -1,0 +1,126 @@
+.upload-version {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.upload-version__back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: var(--space-5);
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+
+  &:hover {
+    color: var(--color-primary-600);
+  }
+}
+
+.upload-version__header {
+  margin-bottom: var(--space-6);
+
+  h1 {
+    margin-bottom: var(--space-1);
+  }
+}
+
+.upload-version__form {
+  padding: var(--space-8);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.full-width {
+  width: 100%;
+}
+
+.upload-version__file-section {
+  margin-bottom: var(--space-5);
+}
+
+.upload-version__label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: var(--space-2);
+}
+
+.upload-version__dropzone-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-6);
+  border: 2px dashed var(--surface-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-align: center;
+
+  &:hover {
+    border-color: var(--color-primary-300);
+    background: var(--surface-hover);
+  }
+
+  mat-icon {
+    font-size: 28px;
+    width: 28px;
+    height: 28px;
+    color: var(--color-primary-400);
+  }
+
+  span {
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+}
+
+.upload-version__file {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-md);
+  background: var(--surface-hover);
+
+  mat-icon:first-child {
+    color: var(--color-danger-fg);
+  }
+}
+
+.upload-version__file-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+
+  strong {
+    font-size: 13px;
+  }
+
+  small {
+    font-size: 12px;
+    color: var(--text-tertiary);
+  }
+}
+
+.upload-version__file-error {
+  color: var(--color-danger-fg);
+  font-size: 12px;
+  margin-top: var(--space-2);
+}
+
+.upload-version__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}

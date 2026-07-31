@@ -1,0 +1,44 @@
+<div class="profile">
+  <h1>My Profile</h1>
+
+  <div class="profile__card card-surface" *ngIf="user() as u">
+    <div class="profile__identity">
+      <span class="profile__avatar">{{ initials }}</span>
+      <div>
+        <h2>{{ u.firstName }} {{ u.lastName }}</h2>
+        <p class="text-secondary">{{ u.email }}</p>
+        <span class="pill pill--info">{{ roleLabel(u.role) }}</span>
+      </div>
+    </div>
+
+    <hr class="divider" />
+
+    <form [formGroup]="form" (ngSubmit)="save()" class="profile__form">
+      <div class="profile__form-row">
+        <mat-form-field appearance="outline">
+          <mat-label>First Name</mat-label>
+          <input matInput formControlName="firstName" />
+          <mat-error *ngIf="form.controls.firstName.hasError('required')">First name is required</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Last Name</mat-label>
+          <input matInput formControlName="lastName" />
+          <mat-error *ngIf="form.controls.lastName.hasError('required')">Last name is required</mat-error>
+        </mat-form-field>
+      </div>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Email Address</mat-label>
+        <input matInput [value]="u.email" disabled />
+        <mat-hint>Contact your administrator to change your email address.</mat-hint>
+      </mat-form-field>
+
+      <div class="profile__actions">
+        <button mat-flat-button color="primary" type="submit" [disabled]="saving()">
+          {{ saving() ? 'Saving...' : 'Save Changes' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

@@ -11,7 +11,10 @@ import java.time.LocalDateTime;
 @Builder
 public class PaperSubmissionResponse {
     private Long paperId;
+    private Long reviewId;
     private String title;
     private Long researcherId;
     private LocalDateTime submittedDate;
+    private String reviewStatus;
+    private Integer currentVersion;
 }

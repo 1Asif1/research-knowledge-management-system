@@ -11,8 +11,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.clarivate.paperservice.Dto.Request.PaperRequest;
 import com.clarivate.paperservice.Dto.Request.UpdatePaperRequest;
 import com.clarivate.paperservice.Dto.Response.PaperResponse;
-import com.clarivate.paperservice.Service.Implementation.PaperServiceImpl;
 import lombok.RequiredArgsConstructor;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -27,7 +27,7 @@ public class PaperController {
 
     @PostMapping
     public ResponseEntity<PaperResponse> createPaper(
-            @RequestBody PaperRequest request) {
+            @Valid @RequestBody PaperRequest request) {
 
         return ResponseEntity.ok(
                 paperService.SubmitPaper(request));
@@ -36,7 +36,7 @@ public class PaperController {
     @PutMapping("/{paperId}")
     public ResponseEntity<PaperResponse> updatePaper(
             @PathVariable Long paperId,
-            @RequestBody UpdatePaperRequest request) {
+            @Valid @RequestBody UpdatePaperRequest request) {
 
         return ResponseEntity.ok(
                 paperService.updatePaper(paperId, request));

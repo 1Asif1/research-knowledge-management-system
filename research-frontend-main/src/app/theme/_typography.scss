@@ -1,0 +1,75 @@
+// =========================================================================
+// TYPOGRAPHY SCALE
+// Sans-serif (Inter) for UI, serif (Source Serif 4) reserved for paper
+// titles / abstracts to signal "academic document" content.
+// =========================================================================
+
+$font-family-ui:   'Inter', 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+$font-family-serif: 'Source Serif 4', Georgia, serif;
+
+@mixin type-display {
+  font-family: $font-family-ui;
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 40px;
+  letter-spacing: -0.02em;
+}
+
+@mixin type-h1 {
+  font-family: $font-family-ui;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 34px;
+  letter-spacing: -0.01em;
+}
+
+@mixin type-h2 {
+  font-family: $font-family-ui;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 28px;
+}
+
+@mixin type-h3 {
+  font-family: $font-family-ui;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+}
+
+@mixin type-body {
+  font-family: $font-family-ui;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 22px;
+}
+
+@mixin type-body-strong {
+  font-family: $font-family-ui;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 22px;
+}
+
+@mixin type-caption {
+  font-family: $font-family-ui;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+  letter-spacing: 0.01em;
+}
+
+@mixin type-overline {
+  font-family: $font-family-ui;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+@mixin type-paper-title {
+  font-family: $font-family-serif;
+  font-weight: 600;
+  line-height: 1.4;
+}

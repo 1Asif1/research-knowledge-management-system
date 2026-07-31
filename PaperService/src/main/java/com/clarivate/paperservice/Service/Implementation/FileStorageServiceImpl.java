@@ -19,6 +19,11 @@ public class FileStorageServiceImpl implements FileStorageService {
     public FileStorageServiceImpl(@Value("${file.upload-dir}") String uploadDir) {
         this.fileStorageLocation= Paths.get(uploadDir)
         .toAbsolutePath().normalize();
+        try {
+            Files.createDirectories(this.fileStorageLocation);
+        } catch (IOException e) {
+            throw new IllegalStateException("Unable to create file storage directory", e);
+        }
 
     }
 

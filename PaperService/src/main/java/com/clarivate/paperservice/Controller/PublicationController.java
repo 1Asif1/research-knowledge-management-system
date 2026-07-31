@@ -4,6 +4,7 @@ import com.clarivate.paperservice.Dto.Request.PublishPaperRequest;
 import com.clarivate.paperservice.Dto.Response.PublicationResponse;
 import com.clarivate.paperservice.Service.Implementation.PublicationServiceImpl;
 import lombok.RequiredArgsConstructor;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,7 +17,7 @@ public class PublicationController {
 
     @PostMapping
     public ResponseEntity<String> publishPaper(
-            @RequestBody PublishPaperRequest request) {
+            @Valid @RequestBody PublishPaperRequest request) {
 
         return ResponseEntity.ok(
                 publicationService.publishPaper(request.getPaperId()));

@@ -1,0 +1,45 @@
+.auth-layout {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  background: #ffffff;
+}
+
+.auth-layout__wrap {
+  width: 100%;
+  max-width: 560px;
+  padding: 24px;
+}
+
+.auth-layout__head {
+  text-align: center;
+  margin-bottom: 28px;
+
+  h1 {
+    margin: 0;
+    font-family: 'Source Serif 4', Georgia, serif;
+    color: #0e274f;
+    font-size: 54px;
+    font-weight: 600;
+  }
+
+  span {
+    width: 92px;
+    height: 1px;
+    background: #cf9a1c;
+    display: inline-block;
+    margin: 10px 0;
+  }
+
+  p {
+    margin: 0;
+    color: #405274;
+    font-size: 15px;
+    letter-spacing: 0.06em;
+  }
+}
+
+.auth-layout__form-area {
+  display: flex;
+  justify-content: center;
+}

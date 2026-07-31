@@ -14,6 +14,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
+import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
 @Service
@@ -25,6 +26,9 @@ public class UserServiceImp implements UserService {
 
     @Override
     public UserResponse createUser(UserRequest request) {
+        if (repo.existsByEmail(request.email())) {
+            throw new ResponseStatusException(CONFLICT, "This email is already registered.");
+        }
 
         User user = new User();
 

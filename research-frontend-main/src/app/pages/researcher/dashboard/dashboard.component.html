@@ -1,0 +1,82 @@
+<div class="dashboard">
+  <div class="dashboard__heading">
+    <div>
+      <h1>Welcome back</h1>
+      <p class="text-secondary">Here's an overview of your research submissions.</p>
+    </div>
+    <button mat-flat-button color="primary" routerLink="/researcher/submit">
+      <mat-icon>note_add</mat-icon>
+      Submit New Paper
+    </button>
+  </div>
+
+  <app-loading-spinner *ngIf="loading()" message="Loading your dashboard..."></app-loading-spinner>
+
+  <ng-container *ngIf="!loading()">
+    <div class="dashboard__stats">
+      <div class="stat-card card-surface">
+        <span class="stat-card__value">{{ stats().total }}</span>
+        <span class="stat-card__label">Total Papers</span>
+      </div>
+      <div class="stat-card card-surface">
+        <span class="stat-card__value">{{ stats().underReview }}</span>
+        <span class="stat-card__label">Under Review</span>
+      </div>
+      <div class="stat-card card-surface">
+        <span class="stat-card__value">{{ stats().correctionsRequested }}</span>
+        <span class="stat-card__label">Corrections Requested</span>
+      </div>
+      <div class="stat-card card-surface">
+        <span class="stat-card__value">{{ stats().accepted }}</span>
+        <span class="stat-card__label">Accepted</span>
+      </div>
+      <div class="stat-card card-surface">
+        <span class="stat-card__value">{{ stats().rejected }}</span>
+        <span class="stat-card__label">Rejected</span>
+      </div>
+    </div>
+
+    <div class="dashboard__grid">
+      <section class="dashboard__section card-surface">
+        <div class="dashboard__section-header">
+          <h2>Recent Activity</h2>
+          <a routerLink="/researcher/papers" class="text-link">View all</a>
+        </div>
+
+        <div class="dashboard__papers" *ngIf="recentSubmissions().length; else emptyPapers">
+          <app-paper-card
+            *ngFor="let paper of recentSubmissions()"
+            [title]="paper.title"
+            [date]="paper.submittedDate"
+            statusLabel="Submitted"
+            statusIntent="info"
+            [routerLink]="['/researcher/papers', paper.paperId]"
+          ></app-paper-card>
+        </div>
+
+        <ng-template #emptyPapers>
+          <div class="dashboard__empty">
+            <mat-icon>description</mat-icon>
+            <p>You haven't submitted any papers yet.</p>
+            <button mat-stroked-button routerLink="/researcher/submit">Submit your first paper</button>
+          </div>
+        </ng-template>
+      </section>
+
+      <section class="dashboard__section card-surface">
+        <div class="dashboard__section-header">
+          <h2>Submission Timeline</h2>
+        </div>
+
+        <app-timeline *ngIf="timelineSteps().length; else emptyTimeline" [steps]="timelineSteps()"></app-timeline>
+
+        <ng-template #emptyTimeline>
+          <div class="dashboard__empty">
+            <mat-icon>timeline</mat-icon>
+            <p>No activity to show yet.</p>
+          </div>
+        </ng-template>
+      </section>
+    </div>
+  </ng-container>
+</div>

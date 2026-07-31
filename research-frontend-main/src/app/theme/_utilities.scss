@@ -1,0 +1,51 @@
+@use './mixins' as mix;
+
+.text-secondary { color: var(--text-secondary); }
+.text-tertiary  { color: var(--text-tertiary); }
+.text-link      { color: var(--text-link); cursor: pointer; }
+
+.card-surface       { @include mix.card-surface; }
+.card-surface-hover { @include mix.card-surface; @include mix.card-surface-hover; }
+
+.divider {
+  height: 1px;
+  background: var(--surface-divider);
+  border: none;
+  margin: 0;
+}
+
+// Status pill base — modified per-status in the StatusBadge component (Feature: Shared Components)
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px var(--space-3);
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 18px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.pill--success { background: var(--color-success-bg); color: var(--color-success-fg); border-color: var(--color-success-border); }
+.pill--warning { background: var(--color-warning-bg); color: var(--color-warning-fg); border-color: var(--color-warning-border); }
+.pill--danger  { background: var(--color-danger-bg);  color: var(--color-danger-fg);  border-color: var(--color-danger-border); }
+.pill--info    { background: var(--color-info-bg);    color: var(--color-info-fg);    border-color: var(--color-info-border); }
+.pill--neutral { background: var(--color-gray-100);   color: var(--color-gray-600);   border-color: var(--color-gray-200); }
+
+.container-page {
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  padding: var(--space-6);
+
+  @include mix.bp-down('md') {
+    padding: var(--space-4);
+  }
+}
+
+@for $i from 1 through 16 {
+  .mt-#{$i} { margin-top: var(--space-#{$i}) !important; }
+  .mb-#{$i} { margin-bottom: var(--space-#{$i}) !important; }
+  .gap-#{$i} { gap: var(--space-#{$i}) !important; }
+}

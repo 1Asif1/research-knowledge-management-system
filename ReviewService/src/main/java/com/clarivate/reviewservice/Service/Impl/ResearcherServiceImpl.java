@@ -51,7 +51,7 @@ public class ResearcherServiceImpl implements ResearcherService {
                 .editorDecision(EditorDecision.PENDING.toString())
                 .lastUpdated(LocalDateTime.now())
                 .build();
-        reviewProcessRepository.save(reviewProcess);
+        reviewProcess = reviewProcessRepository.save(reviewProcess);
 
         PaperVersion version = PaperVersion.builder()
                 .paperSubmission(paper)
@@ -136,11 +136,17 @@ public class ResearcherServiceImpl implements ResearcherService {
     }
 
     private PaperSubmissionResponse mapToResponse(PaperSubmission paper) {
+        ReviewProcess reviewProcess = reviewProcessRepository.findByPaperId(paper.getPaperId())
+                .orElse(null);
+
         return PaperSubmissionResponse.builder()
                 .paperId(paper.getPaperId())
+                .reviewId(reviewProcess != null ? reviewProcess.getReviewId() : null)
                 .title(paper.getTitle())
                 .researcherId(paper.getResearcherId())
                 .submittedDate(paper.getSubmittedDate())
+                .reviewStatus(reviewProcess != null ? reviewProcess.getReviewStatus() : null)
+                .currentVersion(reviewProcess != null ? reviewProcess.getCurrentVersion() : null)
                 .build();
     }
 }

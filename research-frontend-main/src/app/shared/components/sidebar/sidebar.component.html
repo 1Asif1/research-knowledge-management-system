@@ -1,0 +1,13 @@
+<aside class="sidebar" [class.collapsed]="collapsed()">
+  <nav class="sidebar__nav">
+    <a
+      *ngFor="let item of menuItems()"
+      class="sidebar__link"
+      [routerLink]="item.route"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="item.exact ? exactMatchOptions : subsetMatchOptions"
+    >
+      <span *ngIf="!collapsed()">{{ item.label }}</span>
+    </a>
+  </nav>
+</aside>

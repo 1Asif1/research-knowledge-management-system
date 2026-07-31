@@ -9,6 +9,8 @@ import com.clarivate.authserviced.Entity.Role;
 import com.clarivate.authserviced.Security.JwtTokenProvider;
 import org.springframework.stereotype.Service;
 
+import java.util.Map;
+
 @Service
 public class AuthServiceImpl implements AuthService {
     private final UserServiceClient userServiceClient;
@@ -23,7 +25,16 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public LoginResponse login(LoginRequest request){
         UserResponse user = userServiceClient.validateUser(request);
-        String token = jwtTokenProvider.generateToken(user.getEmail(), user.getRole() != null ? user.getRole().name() : null);
+        String token = jwtTokenProvider.generateToken(
+                user.getEmail(),
+                user.getRole() != null ? user.getRole().name() : null,
+                Map.of(
+                        "userId", user.getUuid(),
+                        "firstname", user.getFirstname(),
+                        "lastname", user.getLastname(),
+                        "email", user.getEmail()
+                )
+        );
         return new LoginResponse(
                 token, user.getUuid(), user.getFirstname(), user.getLastname(), user.getEmail(), user.getRole(), "Login successful"
         );
@@ -33,11 +44,22 @@ public class AuthServiceImpl implements AuthService {
     public ValidateTokenResponse validateToken(String token) {
         boolean valid = jwtTokenProvider.validateToken(token);
         if(!valid){
-            return new ValidateTokenResponse(false, null, null, null);
+            return new ValidateTokenResponse(false, null, null, null, null);
         }
         String roleValue = jwtTokenProvider.getRole(token);
-        Role role = roleValue != null ? Role.valueOf(roleValue) : null;
-        return new ValidateTokenResponse(true, null, null, role);
+        Role role;
+        try {
+            role = roleValue != null ? Role.valueOf(roleValue) : null;
+        } catch (IllegalArgumentException ex) {
+            return new ValidateTokenResponse(false, null, null, null, null);
+        }
+        return new ValidateTokenResponse(
+                true,
+                jwtTokenProvider.getEmail(token),
+                jwtTokenProvider.getFirstName(token),
+                jwtTokenProvider.getLastName(token),
+                role
+        );
 
     }
 

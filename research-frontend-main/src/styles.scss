@@ -1,0 +1,60 @@
+@use 'app/theme/tokens';
+@use 'app/theme/typography' as typo;
+@use 'app/theme/mixins';
+@use 'app/theme/material-theme';
+@use 'app/theme/utilities';
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  @include typo.type-body;
+  background: var(--surface-app-bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  color: var(--text-primary);
+}
+
+h1 { @include typo.type-h1; }
+h2 { @include typo.type-h2; }
+h3 { @include typo.type-h3; }
+
+p { margin: 0; }
+
+a {
+  color: var(--text-link);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+button {
+  font-family: inherit;
+}
+
+::selection {
+  background: var(--color-primary-100);
+  color: var(--color-primary-900);
+}
+.rkm-snackbar {
+  &.rkm-snackbar--success .mdc-snackbar__surface { background: var(--color-success-fg) !important; }
+  &.rkm-snackbar--info .mdc-snackbar__surface    { background: var(--color-primary-700) !important; }
+  &.rkm-snackbar--danger .mdc-snackbar__surface  { background: var(--color-danger-fg) !important; }
+
+  .mdc-snackbar__label { color: var(--color-white) !important; }
+  .mat-mdc-snack-bar-action { color: var(--color-white) !important; }
+}

@@ -23,7 +23,10 @@ public class AuthController {
     }
 
     @PostMapping("/validate")
-    public ResponseEntity<ValidateTokenResponse> validateToken(@RequestHeader("Authorization")String token){
+    public ResponseEntity<ValidateTokenResponse> validateToken(@RequestHeader(value = "Authorization", required = false) String token){
+        if (token == null || token.isBlank()) {
+            return ResponseEntity.ok(new ValidateTokenResponse(false, null, null, null, null));
+        }
         String normalizedToken = token != null && token.startsWith("Bearer ") ? token.substring(7) : token;
         return ResponseEntity.ok(authService.validateToken(normalizedToken));
     }

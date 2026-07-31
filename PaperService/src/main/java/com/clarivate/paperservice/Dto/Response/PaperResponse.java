@@ -23,9 +23,9 @@ public class PaperResponse {
         this.id = paper.getId();
         this.title = paper.getTitle();
         this.description = paper.getDescription();
-        this.authorName = paper.getAuthor();
-        this.status = paper.getStatus().name();
-        this.coAuthors = paper.getCoAuthors();
+        this.authorName = paper.getAuthor() != null ? paper.getAuthor() : String.valueOf(paper.getAuthorId());
+        this.status = paper.getStatus() != null ? paper.getStatus().name() : "DRAFT";
+        this.coAuthors = paper.getCoAuthors() != null ? paper.getCoAuthors() : List.of();
     }
 
 }

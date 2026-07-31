@@ -1,0 +1,60 @@
+<div class="upload-version">
+  <a [routerLink]="['/researcher/papers', paperId]" class="upload-version__back">
+    <mat-icon>arrow_back</mat-icon>
+    Back to Paper Details
+  </a>
+
+  <div class="upload-version__header">
+    <h1>Upload Corrected Version</h1>
+    <p class="text-secondary">Paper ID: {{ paperId }}</p>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="submit()" class="upload-version__form card-surface">
+    <div class="upload-version__file-section">
+      <label class="upload-version__label">Corrected Manuscript (PDF)</label>
+
+      <div class="upload-version__dropzone" *ngIf="!selectedFile()">
+        <input type="file" accept="application/pdf" (change)="onFileSelected($event)" id="version-file-input" hidden />
+        <label for="version-file-input" class="upload-version__dropzone-label">
+          <mat-icon>cloud_upload</mat-icon>
+          <span>Click to upload the new version</span>
+        </label>
+      </div>
+
+      <div class="upload-version__file" *ngIf="selectedFile() as file">
+        <mat-icon>picture_as_pdf</mat-icon>
+        <div class="upload-version__file-info">
+          <strong>{{ file.name }}</strong>
+          <small>{{ (file.size / 1024 / 1024).toFixed(2) }} MB</small>
+        </div>
+        <button mat-icon-button type="button" (click)="removeFile()" aria-label="Remove file">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <p class="upload-version__file-error" *ngIf="fileError()">{{ fileError() }}</p>
+    </div>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Change Summary</mat-label>
+      <textarea
+        matInput
+        rows="5"
+        formControlName="changeSummary"
+        placeholder="Describe what was changed in response to reviewer feedback..."
+      ></textarea>
+      <mat-error *ngIf="form.controls.changeSummary.hasError('required')">Change summary is required</mat-error>
+    </mat-form-field>
+
+    <mat-progress-bar *ngIf="submitting()" mode="indeterminate"></mat-progress-bar>
+
+    <div class="upload-version__actions">
+      <button mat-stroked-button type="button" [routerLink]="['/researcher/papers', paperId]" [disabled]="submitting()">
+        Cancel
+      </button>
+      <button mat-flat-button color="primary" type="submit" [disabled]="submitting()">
+        {{ submitting() ? 'Uploading...' : 'Upload Version' }}
+      </button>
+    </div>
+  </form>
+</div>

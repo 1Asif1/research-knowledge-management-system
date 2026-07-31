@@ -7,10 +7,11 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.util.List;
+import java.time.LocalDateTime;
 
 @Entity
 @Data
@@ -35,27 +36,32 @@ public class Paper {
     private byte[] fileData;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private PaperStatus status;
 
     @OneToMany(mappedBy = "paper",cascade = CascadeType.ALL)
     @JsonManagedReference
     private List<PaperVersion> paperVersions;
 
-    @CreatedDate
-    @Column(name="created_date",nullable = false,updatable = false)
-    private java.time.LocalDateTime createdDate;
+    @CreationTimestamp
+    @Column(name = "created_date", nullable = false, updatable = false)
+    private LocalDateTime createdDate;
 
-    @LastModifiedDate
+    @UpdateTimestamp
     @Column(name = "last_updated")
-    private java.time.LocalDateTime lastUpdated;
+    private LocalDateTime lastUpdated;
 
-    @Column(name = "co_authors")
+    @ElementCollection
+    @CollectionTable(name = "paper_co_authors", joinColumns = @JoinColumn(name = "paper_id"))
+    @Column(name = "co_author")
     private List<String> coAuthors;
 
     public Paper(PaperRequest paperRequest) {
         this.title = paperRequest.getTitle();
         this.description = paperRequest.getDescription();
         this.authorId = paperRequest.getAuthorId();
-        this.status = PaperStatus.valueOf(paperRequest.getStatus());
+        this.author = paperRequest.getAuthorId() != null ? "User #" + paperRequest.getAuthorId() : null;
+        this.status = paperRequest.getStatus() != null ? PaperStatus.valueOf(paperRequest.getStatus()) : PaperStatus.DRAFT;
+        this.coAuthors = paperRequest.getCoAuthors();
     }
 }

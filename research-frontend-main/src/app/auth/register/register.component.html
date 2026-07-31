@@ -1,0 +1,62 @@
+<div class="auth-card">
+  <a routerLink="/auth/login" class="auth-back-link">
+    <mat-icon>arrow_back</mat-icon>
+    Back to sign in
+  </a>
+
+  <h2>Create account</h2>
+
+  <div class="auth-card__success" *ngIf="successMessage()">
+    <mat-icon>check_circle</mat-icon>
+    <span>{{ successMessage() }}</span>
+  </div>
+
+  <div class="auth-card__error" *ngIf="errorMessage()">
+    <mat-icon>error_outline</mat-icon>
+    <span>{{ errorMessage() }}</span>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="submit()" class="auth-form">
+    <div class="auth-form__grid">
+      <mat-form-field appearance="outline" class="auth-form__field">
+        <mat-label>First name</mat-label>
+        <input matInput type="text" formControlName="firstName" autocomplete="given-name" />
+        <mat-error *ngIf="form.controls.firstName.hasError('required')">First name is required</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="auth-form__field">
+        <mat-label>Last name</mat-label>
+        <input matInput type="text" formControlName="lastName" autocomplete="family-name" />
+        <mat-error *ngIf="form.controls.lastName.hasError('required')">Last name is required</mat-error>
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline" class="auth-form__field">
+      <mat-label>Email address</mat-label>
+      <input matInput type="email" formControlName="email" autocomplete="email" placeholder="you@institution.edu" />
+      <mat-error *ngIf="form.controls.email.hasError('required')">Email is required</mat-error>
+      <mat-error *ngIf="form.controls.email.hasError('email')">Enter a valid email address</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="auth-form__field">
+      <mat-label>Password</mat-label>
+      <input matInput type="password" formControlName="password" autocomplete="new-password" />
+      <mat-error *ngIf="form.controls.password.hasError('required')">Password is required</mat-error>
+      <mat-error *ngIf="form.controls.password.hasError('minlength')">Password must be at least 6 characters</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="auth-form__field">
+      <mat-label>Confirm password</mat-label>
+      <input matInput type="password" formControlName="confirmPassword" autocomplete="new-password" />
+      <mat-error *ngIf="form.controls.confirmPassword.hasError('required')">Confirm your password</mat-error>
+    </mat-form-field>
+    <p class="auth-form__hint" *ngIf="form.hasError('passwordMismatch') && form.controls.confirmPassword.touched">
+      Passwords do not match.
+    </p>
+
+    <button mat-flat-button color="primary" type="submit" class="auth-form__submit" [disabled]="loading()">
+      <mat-spinner *ngIf="loading()" diameter="20" strokeWidth="3"></mat-spinner>
+      <span *ngIf="!loading()">Register</span>
+    </button>
+  </form>
+</div>

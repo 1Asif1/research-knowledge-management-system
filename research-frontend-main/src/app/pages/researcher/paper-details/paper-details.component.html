@@ -1,0 +1,83 @@
+<div class="paper-details">
+  <a routerLink="/researcher/papers" class="paper-details__back">
+    <mat-icon>arrow_back</mat-icon>
+    Back to My Papers
+  </a>
+
+  <app-loading-spinner *ngIf="loading()" message="Loading paper details..."></app-loading-spinner>
+
+  <ng-container *ngIf="!loading() && paper() as p">
+    <div class="paper-details__header card-surface">
+      <div class="paper-details__title-row">
+        <h1>{{ p.title }}</h1>
+        <app-status-badge
+          [label]="reviewStatusLabel(p.reviewStatus ?? 'SUBMITTED')"
+          [intent]="reviewStatusIntent(p.reviewStatus ?? 'SUBMITTED')"
+        ></app-status-badge>
+      </div>
+
+      <div class="paper-details__meta">
+        <span><mat-icon>schedule</mat-icon>Submitted {{ p.submittedDate | date: 'MMM d, y' }}</span>
+        <span><mat-icon>tag</mat-icon>Paper ID: {{ p.paperId }}</span>
+        <span *ngIf="p.reviewId"><mat-icon>rate_review</mat-icon>Review ID: {{ p.reviewId }}</span>
+        <span *ngIf="p.currentVersion"><mat-icon>layers</mat-icon>Version {{ p.currentVersion }}</span>
+      </div>
+
+      <div class="paper-details__actions">
+        <button mat-stroked-button [routerLink]="['/researcher/papers', p.paperId, 'upload-version']">
+          <mat-icon>upload_file</mat-icon>
+          Upload Corrected Version
+        </button>
+        <button mat-stroked-button disabled>
+          <mat-icon>download</mat-icon>
+          Download PDF
+        </button>
+      </div>
+    </div>
+
+    <mat-tab-group class="paper-details__tabs" animationDuration="150ms">
+      <mat-tab label="Review Comments">
+        <div class="paper-details__tab-content">
+          <div class="comment-card" *ngFor="let comment of comments()">
+            <div class="comment-card__header">
+              <mat-icon>chat_bubble_outline</mat-icon>
+              <span>Reviewer #{{ comment.reviewerId }}</span>
+              <span class="comment-card__date">{{ comment.createdDate | date: 'MMM d, y, h:mm a' }}</span>
+            </div>
+            <p>{{ comment.comment }}</p>
+          </div>
+
+          <div class="paper-details__empty" *ngIf="!comments().length && !commentsUnavailable()">
+            <mat-icon>forum</mat-icon>
+            <p>No reviewer comments yet.</p>
+          </div>
+
+          <div class="paper-details__empty" *ngIf="commentsUnavailable()">
+            <mat-icon>info_outline</mat-icon>
+            <p>Review comments aren't available for this paper yet.</p>
+          </div>
+        </div>
+      </mat-tab>
+
+      <mat-tab label="Version History">
+        <div class="paper-details__tab-content">
+          <div class="paper-details__empty">
+            <mat-icon>history</mat-icon>
+            <p>Version history will appear here once a corrected version is uploaded.</p>
+          </div>
+        </div>
+      </mat-tab>
+
+      <mat-tab label="Review Timeline">
+        <div class="paper-details__tab-content">
+          <app-timeline
+            [steps]="[
+              { label: 'Paper Submitted', timestamp: p.submittedDate, state: 'completed', icon: 'upload_file' },
+              { label: 'Awaiting Reviewer Assignment', state: 'current', icon: 'hourglass_empty' }
+            ]"
+          ></app-timeline>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  </ng-container>
+</div>

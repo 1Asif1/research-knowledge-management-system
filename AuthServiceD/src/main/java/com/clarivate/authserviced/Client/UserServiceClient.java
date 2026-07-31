@@ -24,6 +24,10 @@ public class UserServiceClient {
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<LoginRequest> entity = new HttpEntity<>(request,headers);
         ResponseEntity<UserResponse> response = restTemplate.exchange(userServiceUrl+ "/users/login", HttpMethod.POST,entity,UserResponse.class);
-        return response.getBody();
+        UserResponse body = response.getBody();
+        if (body == null) {
+            throw new IllegalStateException("User service returned an empty response.");
+        }
+        return body;
     }
 }
