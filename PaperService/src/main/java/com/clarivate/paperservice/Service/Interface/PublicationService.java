@@ -1,9 +1,18 @@
 package com.clarivate.paperservice.Service.Interface;
 
+import com.clarivate.paperservice.Dto.Request.PublishPaperRequest;
+import com.clarivate.paperservice.Dto.Response.PublicationResponse;
+
+import java.util.List;
+
 public interface PublicationService {
-    String publishPaper(Long paperId);
 
-    String updatePublishedPaper(Long paperId);
+    PublicationResponse publishPaper(
+            PublishPaperRequest request
+    );
 
-    String PublicationDetails(String paperId);
+    PublicationResponse getPublicationById(
+            Long publicationId
+    );
+    List<PublicationResponse> getAllPublications();
 }

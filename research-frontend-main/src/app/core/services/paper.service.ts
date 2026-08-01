@@ -8,7 +8,8 @@ import {
   PaperRequest,
   UpdatePaperRequest,
   PaperResponse,
-  PublishPaperRequest
+  PublishPaperRequest,
+  PublicationResponse
 } from '@core/models';
 
 @Injectable({ providedIn: 'root' })
@@ -43,12 +44,27 @@ export class PaperService {
     return this.http.patch(`${this.paperBaseUrl}/${paperId}/status`, null, { params, responseType: 'text' });
   }
 
-  publishPaper(request: PublishPaperRequest): Observable<string> {
-    return this.http.post(this.publicationBaseUrl, request, { responseType: 'text' });
+  publishPaper(
+    request: PublishPaperRequest
+  ): Observable<PublicationResponse> {
+    return this.http.post<PublicationResponse>(
+      this.publicationBaseUrl,
+      request
+    );
   }
 
-  getPublicationById(publicationId: number): Observable<string> {
-    return this.http.get(`${this.publicationBaseUrl}/${publicationId}`, { responseType: 'text' });
+  getAllPublications(): Observable<PublicationResponse[]> {
+    return this.http.get<PublicationResponse[]>(
+      this.publicationBaseUrl
+    );
+  }
+
+  getPublicationById(
+    publicationId: number
+  ): Observable<PublicationResponse> {
+    return this.http.get<PublicationResponse>(
+      `${this.publicationBaseUrl}/${publicationId}`
+    );
   }
 
   uploadPaperVersion(paperId: number, file: File, changeNotes?: string): Observable<string> {

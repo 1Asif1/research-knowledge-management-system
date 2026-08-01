@@ -215,10 +215,55 @@ export class EditorialDecisionsComponent implements OnInit {
   getActionLabel(
     review: ReviewProcessResponse
   ): string {
-    return this.getDecisionState(review) ===
-      'AWAITING_DECISION'
-      ? 'Make Decision'
-      : 'View Decision';
+    switch (this.getDecisionState(review)) {
+      case 'AWAITING_DECISION':
+        return 'Make Decision';
+
+      case 'ACCEPTED':
+        return 'Publish Paper';
+
+      case 'REJECTED':
+        return 'View Decision';
+
+      default:
+        return 'View';
+    }
+  }
+
+  getActionIcon(
+    review: ReviewProcessResponse
+  ): string {
+    switch (this.getDecisionState(review)) {
+      case 'AWAITING_DECISION':
+        return 'gavel';
+
+      case 'ACCEPTED':
+        return 'publish';
+
+      case 'REJECTED':
+        return 'visibility';
+
+      default:
+        return 'visibility';
+    }
+  }
+
+  getActionRoute(
+    review: ReviewProcessResponse
+  ): (string | number)[] {
+    if (
+      this.getDecisionState(review) === 'ACCEPTED'
+    ) {
+      return [
+        '/editor/publish',
+        review.reviewId
+      ];
+    }
+
+    return [
+      '/editor/decisions',
+      review.reviewId
+    ];
   }
 
   formatValue(value: unknown): string {

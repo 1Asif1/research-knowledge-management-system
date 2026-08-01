@@ -63,6 +63,30 @@ export const EDITOR_ROUTES: Routes = [
     }
   },
   {
+    path: 'publish/:reviewId',
+    loadComponent: () =>
+      import(
+        './publish-paper/publish-paper.component'
+      ).then(
+        (m) => m.PublishPaperComponent
+      ),
+    data: {
+      breadcrumb: 'Publish Paper'
+    }
+  },
+  {
+    path: 'published-papers',
+    loadComponent: () =>
+      import(
+        './published-papers/published-papers.component'
+      ).then(
+        (m) => m.PublishedPapersComponent
+      ),
+    data: {
+      breadcrumb: 'Published Papers'
+    }
+  },
+  {
     path: 'profile',
     loadComponent: () =>
       import('@shared/components/profile/profile.component').then(

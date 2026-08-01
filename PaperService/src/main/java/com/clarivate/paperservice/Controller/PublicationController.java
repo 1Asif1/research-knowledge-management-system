@@ -2,34 +2,52 @@ package com.clarivate.paperservice.Controller;
 
 import com.clarivate.paperservice.Dto.Request.PublishPaperRequest;
 import com.clarivate.paperservice.Dto.Response.PublicationResponse;
-import com.clarivate.paperservice.Service.Implementation.PublicationServiceImpl;
-import lombok.RequiredArgsConstructor;
+import com.clarivate.paperservice.Service.Interface.PublicationService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/publications")
 @RequiredArgsConstructor
 public class PublicationController {
 
-    private final PublicationServiceImpl publicationService;
+    private final PublicationService publicationService;
 
     @PostMapping
-    public ResponseEntity<String> publishPaper(
-            @Valid @RequestBody PublishPaperRequest request) {
+    public ResponseEntity<PublicationResponse> publishPaper(
+            @Valid @RequestBody PublishPaperRequest request
+    ) {
+        PublicationResponse response =
+                publicationService.publishPaper(request);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(response);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<PublicationResponse>>
+    getAllPublications() {
 
         return ResponseEntity.ok(
-                publicationService.publishPaper(request.getPaperId()));
+                publicationService.getAllPublications()
+        );
     }
 
     @GetMapping("/{publicationId}")
-    public ResponseEntity<String>
-    getPublication(
-            @PathVariable Long publicationId) {
-
+    public ResponseEntity<PublicationResponse>
+    getPublicationById(
+            @PathVariable Long publicationId
+    ) {
         return ResponseEntity.ok(
-                publicationService.PublicationDetails(
-                        publicationId.toString()));
+                publicationService.getPublicationById(
+                        publicationId
+                )
+        );
     }
 }

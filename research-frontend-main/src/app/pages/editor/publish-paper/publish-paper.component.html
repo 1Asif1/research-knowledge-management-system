@@ -1,0 +1,333 @@
+<div class="publish-page">
+  <header class="page-header">
+    <div>
+      <button
+        mat-button
+        type="button"
+        class="back-button"
+        (click)="goBack()"
+      >
+        <mat-icon>arrow_back</mat-icon>
+        Editorial Decisions
+      </button>
+
+      <h1>Publish Paper</h1>
+
+      <p class="text-secondary">
+        Publish an accepted research paper.
+      </p>
+    </div>
+  </header>
+
+  <app-loading-spinner
+    *ngIf="loading()"
+    message="Loading publication details..."
+  ></app-loading-spinner>
+
+  <section
+    *ngIf="!loading() && errorMessage()"
+    class="error-card card-surface"
+  >
+    <mat-icon>error_outline</mat-icon>
+
+    <div>
+      <h2>Could not load paper</h2>
+
+      <p>{{ errorMessage() }}</p>
+
+      <button
+        mat-stroked-button
+        type="button"
+        (click)="goBack()"
+      >
+        Return to Editorial Decisions
+      </button>
+    </div>
+  </section>
+
+  <ng-container
+    *ngIf="
+      !loading() &&
+      !errorMessage() &&
+      review() &&
+      paper()
+    "
+  >
+    <section class="paper-summary card-surface">
+      <div class="paper-summary__icon">
+        <mat-icon>article</mat-icon>
+      </div>
+
+      <div class="paper-summary__content">
+        <span class="paper-summary__label">
+          Accepted Paper
+        </span>
+
+        <h2>{{ getPaperTitle() }}</h2>
+
+        <div class="paper-summary__meta">
+          <span>
+            Paper #{{ paper()?.id }}
+          </span>
+
+          <span>
+            Review #{{ review()?.reviewId }}
+          </span>
+
+          <span>
+            Version {{ review()?.currentVersion }}
+          </span>
+        </div>
+      </div>
+
+      <span
+        class="decision-badge"
+        [class.decision-badge--invalid]="
+          !isAccepted()
+        "
+      >
+        <mat-icon>
+          {{ isAccepted() ? 'verified' : 'block' }}
+        </mat-icon>
+
+        {{
+          isAccepted()
+            ? 'Accepted'
+            : formatValue(review()?.editorDecision)
+        }}
+      </span>
+    </section>
+
+    <section
+      *ngIf="!isAccepted()"
+      class="warning-card card-surface"
+    >
+      <mat-icon>warning_amber</mat-icon>
+
+      <div>
+        <h2>Paper is not accepted</h2>
+
+        <p>
+          Only papers with an accepted editorial decision can
+          be published.
+        </p>
+
+        <button
+          mat-stroked-button
+          type="button"
+          (click)="goBack()"
+        >
+          View Editorial Decisions
+        </button>
+      </div>
+    </section>
+
+    <section
+      *ngIf="isAlreadyPublished()"
+      class="success-card card-surface"
+    >
+      <mat-icon>workspace_premium</mat-icon>
+
+      <div>
+        <h2>Paper already published</h2>
+
+        <p>
+          This paper currently has the status
+          <strong>PUBLISHED</strong>.
+        </p>
+
+        <button
+          mat-stroked-button
+          type="button"
+          (click)="goToPapers()"
+        >
+          Return to Papers
+        </button>
+      </div>
+    </section>
+
+    <div
+      *ngIf="
+        isAccepted() &&
+        !isAlreadyPublished()
+      "
+      class="publication-layout"
+    >
+      <main class="paper-details card-surface">
+        <div class="section-heading">
+          <div>
+            <h2>Paper Details</h2>
+
+            <p>
+              Verify the paper information before publishing.
+            </p>
+          </div>
+        </div>
+
+        <div class="details-grid">
+          <div class="detail-item">
+            <span>Title</span>
+
+            <strong>
+              {{ getPaperTitle() }}
+            </strong>
+          </div>
+
+          <div class="detail-item">
+            <span>Author</span>
+
+            <strong>
+              {{ paper()?.authorName || 'Not available' }}
+            </strong>
+          </div>
+
+          <div class="detail-item">
+            <span>Paper Status</span>
+
+            <strong>
+              {{ formatValue(paper()?.status) }}
+            </strong>
+          </div>
+
+          <div class="detail-item">
+            <span>Reviewer</span>
+
+            <strong>
+              Reviewer #{{ review()?.reviewerId }}
+            </strong>
+          </div>
+
+          <div class="detail-item">
+            <span>Reviewer Recommendation</span>
+
+            <strong>
+              {{
+              formatValue(
+              review()?.reviewerRecommendation
+              )
+              }}
+            </strong>
+          </div>
+
+          <div class="detail-item">
+            <span>Editorial Decision</span>
+
+            <strong class="accepted-text">
+              {{
+              formatValue(
+              review()?.editorDecision
+              )
+              }}
+            </strong>
+          </div>
+
+          <div class="detail-item detail-item--full">
+            <span>Description / Abstract</span>
+
+            <p>
+              {{
+              paper()?.description ||
+              'No description is available.'
+              }}
+            </p>
+          </div>
+        </div>
+      </main>
+
+      <aside class="publication-card card-surface">
+        <div class="publication-card__icon">
+          <mat-icon>publish</mat-icon>
+        </div>
+
+        <h2>Publication Details</h2>
+
+        <p>
+          Select the official publication date.
+        </p>
+
+        <form
+          [formGroup]="publicationForm"
+          (ngSubmit)="publishPaper()"
+        >
+          <mat-form-field appearance="outline">
+            <mat-label>Published Date</mat-label>
+
+            <input
+              matInput
+              type="date"
+              formControlName="publishedDate"
+            />
+
+            <mat-icon matSuffix>
+              calendar_today
+            </mat-icon>
+
+            <mat-error
+              *ngIf="
+                publicationForm.controls.publishedDate
+                  .hasError('required')
+              "
+            >
+              Published date is required.
+            </mat-error>
+          </mat-form-field>
+
+          <div class="confirmation-box">
+            <mat-icon>info</mat-icon>
+
+            <p>
+              Publishing will create a permanent publication
+              record and change the paper status to
+              <strong>PUBLISHED</strong>.
+            </p>
+          </div>
+
+          <button
+            mat-flat-button
+            color="primary"
+            type="submit"
+            class="publish-button"
+            [disabled]="
+              publicationForm.invalid ||
+              !canPublish()
+            "
+          >
+            <mat-icon>publish</mat-icon>
+
+            {{
+            publishing()
+            ? 'Publishing Paper...'
+            : 'Publish Paper'
+            }}
+          </button>
+        </form>
+      </aside>
+    </div>
+
+    <section
+      *ngIf="publication()"
+      class="publication-success card-surface"
+    >
+      <div class="publication-success__icon">
+        <mat-icon>task_alt</mat-icon>
+      </div>
+
+      <div>
+        <h2>Paper published successfully</h2>
+
+        <p>
+          Publication #{{ publication()?.id }} was created on
+          {{ publication()?.publishedDate }}.
+        </p>
+      </div>
+
+      <button
+        mat-stroked-button
+        type="button"
+        (click)="goToPapers()"
+      >
+        Return to Papers
+      </button>
+    </section>
+  </ng-container>
+</div>

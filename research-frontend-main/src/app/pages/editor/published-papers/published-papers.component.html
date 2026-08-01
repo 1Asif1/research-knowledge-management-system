@@ -1,0 +1,231 @@
+<div class="published-page">
+  <header class="page-header">
+    <div>
+      <h1>Published Papers</h1>
+
+      <p class="text-secondary">
+        View research papers that have completed the review
+        and publication workflow.
+      </p>
+    </div>
+
+    <button
+      mat-stroked-button
+      type="button"
+      (click)="loadPublications()"
+      [disabled]="loading()"
+    >
+      <mat-icon>refresh</mat-icon>
+
+      {{ loading() ? 'Refreshing...' : 'Refresh' }}
+    </button>
+  </header>
+
+  <section
+    class="publication-stats"
+    *ngIf="!loading() && !errorMessage()"
+  >
+    <article class="stat-card card-surface">
+      <div class="stat-card__icon">
+        <mat-icon>workspace_premium</mat-icon>
+      </div>
+
+      <div>
+        <span>Total Published</span>
+        <strong>{{ totalPublished() }}</strong>
+      </div>
+    </article>
+
+    <article class="stat-card card-surface">
+      <div class="stat-card__icon stat-card__icon--month">
+        <mat-icon>calendar_month</mat-icon>
+      </div>
+
+      <div>
+        <span>Published This Month</span>
+        <strong>{{ publishedThisMonth() }}</strong>
+      </div>
+    </article>
+  </section>
+
+  <section class="published-toolbar card-surface">
+    <mat-form-field appearance="outline">
+      <mat-label>Search published papers</mat-label>
+
+      <mat-icon matPrefix>search</mat-icon>
+
+      <input
+        matInput
+        type="search"
+        [ngModel]="searchTerm()"
+        (ngModelChange)="updateSearch($event)"
+        placeholder="Search by title, paper ID or publication ID"
+      />
+
+      <button
+        *ngIf="searchTerm()"
+        mat-icon-button
+        matSuffix
+        type="button"
+        aria-label="Clear search"
+        (click)="updateSearch('')"
+      >
+        <mat-icon>close</mat-icon>
+      </button>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Sort publications</mat-label>
+
+      <mat-select
+        [ngModel]="selectedSort()"
+        (ngModelChange)="updateSort($event)"
+      >
+        <mat-option value="NEWEST">
+          Newest First
+        </mat-option>
+
+        <mat-option value="OLDEST">
+          Oldest First
+        </mat-option>
+
+        <mat-option value="TITLE_ASC">
+          Title A–Z
+        </mat-option>
+
+        <mat-option value="TITLE_DESC">
+          Title Z–A
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <button
+      mat-button
+      type="button"
+      (click)="clearFilters()"
+      [disabled]="
+        !searchTerm() &&
+        selectedSort() === 'NEWEST'
+      "
+    >
+      <mat-icon>filter_alt_off</mat-icon>
+      Reset
+    </button>
+  </section>
+
+  <app-loading-spinner
+    *ngIf="loading()"
+    message="Loading published papers..."
+  ></app-loading-spinner>
+
+  <section
+    *ngIf="!loading() && errorMessage()"
+    class="error-card card-surface"
+  >
+    <mat-icon>error_outline</mat-icon>
+
+    <div>
+      <h2>Could not load published papers</h2>
+
+      <p>{{ errorMessage() }}</p>
+
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        (click)="loadPublications()"
+      >
+        Try Again
+      </button>
+    </div>
+  </section>
+
+  <section
+    *ngIf="!loading() && !errorMessage()"
+    class="published-table card-surface"
+  >
+    <div class="published-table__header">
+      <span>Paper</span>
+      <span>Publication ID</span>
+      <span>Published Date</span>
+      <span>Status</span>
+      <span>Action</span>
+    </div>
+
+    <article
+      *ngFor="let publication of filteredPublications()"
+      class="published-table__row"
+    >
+      <div class="paper-cell">
+        <div class="paper-cell__icon">
+          <mat-icon>article</mat-icon>
+        </div>
+
+        <div>
+          <strong>{{ publication.title }}</strong>
+
+          <span>
+            Paper #{{ publication.paperId }}
+          </span>
+        </div>
+      </div>
+
+      <span>
+        #{{ publication.id }}
+      </span>
+
+      <span>
+        {{ formatDate(publication.publishedDate) }}
+      </span>
+
+      <span class="published-badge">
+        <mat-icon>verified</mat-icon>
+        Published
+      </span>
+
+      <a
+        mat-stroked-button
+        [routerLink]="[
+          '/researcher/papers',
+          publication.paperId
+        ]"
+      >
+        <mat-icon>visibility</mat-icon>
+        View Paper
+      </a>
+    </article>
+
+    <div
+      *ngIf="filteredPublications().length === 0"
+      class="empty-state"
+    >
+      <mat-icon>library_books</mat-icon>
+
+      <h2>
+        {{
+        searchTerm()
+        ? 'No matching published papers'
+        : 'No published papers yet'
+        }}
+      </h2>
+
+      <p *ngIf="!searchTerm()">
+        Papers will appear here after an editor publishes an
+        accepted paper.
+      </p>
+
+      <p *ngIf="searchTerm()">
+        No publication matches the current search.
+      </p>
+
+      <button
+        *ngIf="searchTerm()"
+        mat-stroked-button
+        type="button"
+        (click)="updateSearch('')"
+      >
+        Clear Search
+      </button>
+    </div>
+  </section>
+</div>

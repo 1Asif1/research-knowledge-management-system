@@ -50,14 +50,14 @@ export const SIDEBAR_MENUS: Record<Role, SidebarMenuItem[]> = {
       icon: 'folder'
     },
     {
-      label: 'Assign Reviewer',
-      route: '/editor/assign-reviewer',
-      icon: 'person_add'
-    },
-    {
       label: 'Editorial Decisions',
       route: '/editor/decisions',
       icon: 'gavel'
+    },
+    {
+      label: 'Published Papers',
+      route: '/editor/published-papers',
+      icon: 'workspace_premium'
     },
     {
       label: 'Notifications',

@@ -24,15 +24,13 @@ export interface PaperResponse {
 
 export interface PublishPaperRequest {
   paperId: number;
-  journalName: string;
-  publishedDate: string; // ISO date (yyyy-MM-dd)
+  publishedDate: string;
 }
 
 export interface PublicationResponse {
   id: number;
   paperId: number;
   title: string;
-  journal: string;
   publishedDate: string;
 }
 

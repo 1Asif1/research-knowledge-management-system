@@ -4,35 +4,49 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.CreatedDate;
+import org.hibernate.annotations.CreationTimestamp;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "publications")
+@Table(
+        name = "publications",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_publication_paper",
+                        columnNames = "paper_id"
+                )
+        }
+)
 public class Publication {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne(cascade = CascadeType.ALL)
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(
+            name = "paper_id",
+            nullable = false,
+            unique = true
+    )
     private Paper paper;
 
-    @Column(name = "publication_name")
-    private String publicationName;
+    @Column(
+            name = "published_date",
+            nullable = false
+    )
+    private LocalDate publishedDate;
 
-    @CreatedDate
-    @Column(name = "created_date", nullable = false, updatable = false)
-    private java.time.LocalDateTime createdDate;
-
-    @Override
-    public String toString() {
-        return "Publication{" +
-                "id=" + id +
-                ", paper=" + paper +
-                ", publicationName='" + publicationName + '\'' +
-                ", createdDate=" + createdDate +
-                '}';
-    }
+    @CreationTimestamp
+    @Column(
+            name = "created_date",
+            nullable = false,
+            updatable = false
+    )
+    private LocalDateTime createdDate;
 }

@@ -1,17 +1,20 @@
 package com.clarivate.paperservice.Dto.Request;
 
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class PublishPaperRequest {
-    @NotNull
+
+    @NotNull(message = "Paper ID is required")
     private Long paperId;
-    @NotBlank
-    private String journalName;
-    @NotNull
+
+    @NotNull(message = "Published date is required")
     private LocalDate publishedDate;
 }

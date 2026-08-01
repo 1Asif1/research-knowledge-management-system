@@ -1,39 +1,102 @@
 package com.clarivate.paperservice.Service.Implementation;
 
-import com.clarivate.paperservice.Repository.PublicationRepository;
-import com.clarivate.paperservice.Repository.PaperRepository;
+import com.clarivate.paperservice.Dto.Request.PublishPaperRequest;
+import com.clarivate.paperservice.Dto.Response.PublicationResponse;
+import com.clarivate.paperservice.Entity.Paper;
 import com.clarivate.paperservice.Entity.Publication;
+import com.clarivate.paperservice.Enum.PaperStatus;
+import com.clarivate.paperservice.Repository.PaperRepository;
+import com.clarivate.paperservice.Repository.PublicationRepository;
 import com.clarivate.paperservice.Service.Interface.PublicationService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
-public class PublicationServiceImpl implements PublicationService {
+@RequiredArgsConstructor
+@Transactional
+public class PublicationServiceImpl
+        implements PublicationService {
 
-    @Autowired
-    PublicationRepository publicationRepository;
-
-    @Autowired
-    PaperRepository paperRepository;
+    private final PublicationRepository publicationRepository;
+    private final PaperRepository paperRepository;
 
     @Override
-    public String publishPaper(Long paperId) {
+    public PublicationResponse publishPaper(
+            PublishPaperRequest request
+    ) {
+        Paper paper = paperRepository
+                .findById(request.getPaperId())
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "Paper not found with id: "
+                                        + request.getPaperId()
+                        )
+                );
+
+        if (publicationRepository.existsByPaperId(
+                request.getPaperId()
+        )) {
+            throw new IllegalStateException(
+                    "Paper is already published"
+            );
+        }
+
+        /*
+         * Keep this check if your workflow updates an accepted
+         * PaperService paper to APPROVED before publication.
+         *
+         * If ReviewService stores the editor decision but PaperService
+         * status is not synchronized yet, this validation may block
+         * valid publication requests. In that case, temporarily remove
+         * this block until service synchronization is implemented.
+         */
+        if (paper.getStatus() != PaperStatus.APPROVED) {
+            throw new IllegalStateException(
+                    "Only approved papers can be published"
+            );
+        }
+
+        paper.setStatus(PaperStatus.PUBLISHED);
+        paperRepository.save(paper);
+
         Publication publication = new Publication();
-        publication.setPaper(paperRepository.findById(paperId)
-                .orElseThrow(() -> new RuntimeException("Paper not found")));
-        publication.setPublicationName("Publication " + paperId);
-        publicationRepository.save(publication);
-        return "Paper " + paperId + " published";
+        publication.setPaper(paper);
+        publication.setPublishedDate(
+                request.getPublishedDate()
+        );
+
+        Publication savedPublication =
+                publicationRepository.save(publication);
+
+        return new PublicationResponse(savedPublication);
     }
 
     @Override
-    public String updatePublishedPaper(Long paperId) {
-        return "Paper " + paperId+" updated";
+    @Transactional(readOnly = true)
+    public List<PublicationResponse> getAllPublications() {
+        return publicationRepository
+                .findAllByOrderByPublishedDateDesc()
+                .stream()
+                .map(PublicationResponse::new)
+                .toList();
     }
-
     @Override
-    public String PublicationDetails(String paperId) {
-        return "Details of paper " + paperId + " \n" + publicationRepository.findById(Long.parseLong(paperId)).orElse(null);
+    @Transactional(readOnly = true)
+    public PublicationResponse getPublicationById(
+            Long publicationId
+    ) {
+        Publication publication = publicationRepository
+                .findById(publicationId)
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "Publication not found with id: "
+                                        + publicationId
+                        )
+                );
 
+        return new PublicationResponse(publication);
     }
 }

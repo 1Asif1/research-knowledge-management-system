@@ -299,6 +299,8 @@ export class EditorPapersComponent implements OnInit {
         return 'Make Decision';
 
       case 'ACCEPTED':
+        return 'Publish Paper';
+
       case 'REJECTED':
         return 'View Decision';
 
@@ -319,6 +321,8 @@ export class EditorPapersComponent implements OnInit {
         return 'gavel';
 
       case 'ACCEPTED':
+        return 'publish';
+
       case 'REJECTED':
         return 'visibility';
 
@@ -338,14 +342,14 @@ export class EditorPapersComponent implements OnInit {
           review.reviewId
         ];
 
-      case 'AWAITING_DECISION':
       case 'ACCEPTED':
-      case 'REJECTED':
         return [
-          '/editor/decisions',
+          '/editor/publish',
           review.reviewId
         ];
 
+      case 'AWAITING_DECISION':
+      case 'REJECTED':
       case 'UNDER_REVIEW':
       default:
         return [
