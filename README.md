@@ -404,6 +404,6 @@ Developed as part of a **Capstone Project** for enterprise software development 
 
 ---
 
-# 📄 License
+#  License
 
 This project is intended for academic and training purposes. Licensing terms may be updated based on organizational requirements.
