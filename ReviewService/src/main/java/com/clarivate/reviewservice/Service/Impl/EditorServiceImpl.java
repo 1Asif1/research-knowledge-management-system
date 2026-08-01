@@ -82,15 +82,19 @@ public class EditorServiceImpl implements EditorService {
         ReviewProcess reviewProcess = reviewProcessRepository.findById(reviewId)
                 .orElseThrow(() -> new EntityNotFoundException("Review not found with id: " + reviewId));
 
-        reviewProcess.setEditorDecision(request.getDecision().toString());
-        if (request.getDecision() == EditorDecision.ACCEPT) {
+        EditorDecision decision = request.getDecision();
+        reviewProcess.setEditorDecision(decision.toString());
+        if (decision == EditorDecision.ACCEPT) {
             reviewProcess.setReviewStatus(ReviewStatus.SENT_TO_PUBLICATION.toString());
-        } else if (request.getDecision() == EditorDecision.REJECT) {
+        } else if (decision == EditorDecision.REJECT) {
             reviewProcess.setReviewStatus(ReviewStatus.REJECTED.toString());
         }
         reviewProcess.setLastUpdated(LocalDateTime.now());
         ReviewProcess updatedReview = reviewProcessRepository.save(reviewProcess);
-        syncPaperStatus(reviewProcess.getPaperId(), mapPaperStatus(request.getDecision()));
+        String paperStatus = mapPaperStatus(decision);
+        if (paperStatus != null) {
+            syncPaperStatus(reviewProcess.getPaperId(), paperStatus);
+        }
 
         ReviewHistory history = ReviewHistory.builder()
                 .reviewProcess(reviewProcess)
@@ -183,6 +187,7 @@ public class EditorServiceImpl implements EditorService {
         return switch (decision) {
             case ACCEPT -> "APPROVED";
             case REJECT -> "REJECTED";
+            case PENDING -> null;
         };
     }
 

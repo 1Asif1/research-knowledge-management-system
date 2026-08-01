@@ -11,12 +11,15 @@ import com.clarivate.reviewservice.dto.Response.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 @SpringBootTest
@@ -211,5 +214,33 @@ class ReviewServiceIntegrationTest {
 
         // Validation should catch this (handled at controller level)
         assertNull(invalidRequest.getResearcherId());
+    }
+
+    @Test
+    void testPendingFinalDecisionDoesNotChangeStatusOrSyncPaper() {
+        SubmitPaperRequest submitRequest = SubmitPaperRequest.builder()
+                .title("Pending Decision Paper")
+                .abstractText("Testing pending final decision behavior")
+                .fileName("pending_v1.pdf")
+                .filePath("/uploads/pending_v1.pdf")
+                .researcherId(10L)
+                .build();
+
+        PaperSubmissionResponse submission = researcherService.submitPaper(submitRequest);
+        ReviewProcess reviewProcess = reviewProcessRepository.findByPaperId(submission.getPaperId()).orElseThrow();
+        String statusBeforeDecision = reviewProcess.getReviewStatus();
+
+        EditorDecisionRequest pendingDecision = EditorDecisionRequest.builder()
+                .decision(EditorDecision.PENDING)
+                .build();
+
+        ReviewProcessResponse response = editorService.makeFinalDecision(reviewProcess.getReviewId(), pendingDecision);
+
+        assertEquals(EditorDecision.PENDING, response.getEditorDecision());
+        assertEquals(ReviewStatus.valueOf(statusBeforeDecision), response.getReviewStatus());
+
+        ReviewProcess persisted = reviewProcessRepository.findById(reviewProcess.getReviewId()).orElseThrow();
+        assertEquals(statusBeforeDecision, persisted.getReviewStatus());
+        verify(paperServiceClient, never()).updateStatus(anyLong(), anyString());
     }
 }
