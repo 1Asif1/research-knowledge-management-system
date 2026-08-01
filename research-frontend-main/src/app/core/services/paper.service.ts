@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 import { environment } from '@env/environment';
@@ -64,7 +64,33 @@ export class PaperService {
     return this.http.get<PaperResponse[]>(`${this.paperBaseUrl}/${paperId}/versions`);
   }
 
-  getPaperVersionContent(paperId: number, versionId: number): Observable<string> {
-    return this.http.get(`${this.paperBaseUrl}/${paperId}/versions/${versionId}`, { responseType: 'text' });
+  getPaperVersionContent(paperId: number, versionNumber: number, suppressGlobalError = false): Observable<string> {
+    const headers = suppressGlobalError
+      ? new HttpHeaders({ 'X-Skip-Global-Error': 'true' })
+      : undefined;
+    return this.http.get(`${this.paperBaseUrl}/${paperId}/versions/${versionNumber}`, {
+      headers,
+      responseType: 'text'
+    });
+  }
+
+  downloadPaperPdfForReviewer(paperId: number, versionNumber: number, suppressGlobalError = false): Observable<Blob> {
+    const headers = suppressGlobalError
+      ? new HttpHeaders({ 'X-Skip-Global-Error': 'true' })
+      : undefined;
+    return this.http.get(`${this.paperBaseUrl}/${paperId}/versions/${versionNumber}/download`, {
+      headers,
+      responseType: 'blob'
+    });
+  }
+
+  downloadCurrentPaperPdfForReviewer(paperId: number, suppressGlobalError = false): Observable<Blob> {
+    const headers = suppressGlobalError
+      ? new HttpHeaders({ 'X-Skip-Global-Error': 'true' })
+      : undefined;
+    return this.http.get(`${this.paperBaseUrl}/${paperId}/download`, {
+      headers,
+      responseType: 'blob'
+    });
   }
 }

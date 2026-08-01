@@ -6,6 +6,7 @@ import com.clarivate.paperservice.Dto.Request.ResearcherUploadVersionRequest;
 import com.clarivate.paperservice.Dto.Request.UpdatePaperRequest;
 import com.clarivate.paperservice.Dto.Response.PaperDownloadResponse;
 import com.clarivate.paperservice.Dto.Response.PaperResponse;
+import com.clarivate.paperservice.Dto.Response.ReviewCommentResponse;
 import com.clarivate.paperservice.Dto.Response.ResearcherPaperResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -49,4 +50,6 @@ public interface PaperService {
     ResearcherPaperResponse getResearcherSubmission(Long paperId);
 
     PaperDownloadResponse downloadCurrentPaperVersion(Long paperId);
+
+    List<ReviewCommentResponse> getResearcherReviewComments(Long paperId);
 }

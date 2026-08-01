@@ -10,11 +10,15 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.clarivate.paperservice.Dto.Request.PaperRequest;
 import com.clarivate.paperservice.Dto.Request.UpdatePaperRequest;
+import com.clarivate.paperservice.Dto.Response.PaperDownloadResponse;
 import com.clarivate.paperservice.Dto.Response.PaperResponse;
 import lombok.RequiredArgsConstructor;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -78,5 +82,20 @@ public class PaperController {
                 status);
 
         return ResponseEntity.ok("Status updated successfully");
+    }
+
+    @GetMapping(value = "/{paperId}/download", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<byte[]> downloadCurrentPaperVersion(
+            @PathVariable Long paperId) {
+        PaperDownloadResponse response = paperService.downloadCurrentPaperVersion(paperId);
+        String fileName = response.getFileName().toLowerCase().endsWith(".pdf")
+                ? response.getFileName()
+                : response.getFileName() + ".pdf";
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        ContentDisposition.inline().filename(fileName).build().toString())
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(response.getContent());
     }
 }

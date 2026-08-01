@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '@env/environment';
-import { AssignReviewerRequest, EditorDecisionRequest, ReviewProcessResponse } from '@core/models';
+import { AssignReviewerRequest, AvailableReviewerResponse, EditorDecisionRequest, ReviewProcessResponse } from '@core/models';
 
 @Injectable({ providedIn: 'root' })
 export class EditorService {
@@ -11,6 +11,10 @@ export class EditorService {
 
   getPendingReviews(): Observable<ReviewProcessResponse[]> {
     return this.http.get<ReviewProcessResponse[]>(`${this.baseUrl}/reviews/pending`);
+  }
+
+  getAvailableReviewers(): Observable<AvailableReviewerResponse[]> {
+    return this.http.get<AvailableReviewerResponse[]>(`${this.baseUrl}/reviewers`);
   }
 
   assignReviewer(request: AssignReviewerRequest): Observable<ReviewProcessResponse> {

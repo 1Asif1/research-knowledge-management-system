@@ -47,6 +47,7 @@ export interface EditorDecisionRequest {
 export interface ReviewProcessResponse {
   reviewId: number;
   paperId: number;
+  paperTitle?: string | null;
   editorId: number | null;
   reviewerId: number | null;
   currentVersion: number;
@@ -54,6 +55,12 @@ export interface ReviewProcessResponse {
   reviewStatus: ReviewStatus;
   reviewerRecommendation: ReviewerRecommendation | null;
   editorDecision: EditorDecision | null;
+}
+
+export interface AvailableReviewerResponse {
+  id: number;
+  firstName: string;
+  lastName: string;
 }
 
 // ---- Reviewer ----

@@ -7,7 +7,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatTabsModule } from '@angular/material/tabs';
 
 import { ResearcherService } from '@core/services/researcher.service';
-import { ReviewerService } from '@core/services/reviewer.service';
 import { PaperSubmissionResponse, ReviewCommentResponse, reviewStatusIntent, reviewStatusLabel } from '@core/models';
 
 import { LoadingSpinnerComponent } from '@shared/components/loading-spinner/loading-spinner.component';
@@ -35,7 +34,6 @@ import { SnackbarService } from '@shared/services/snackbar.service';
 export class PaperDetailsComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly researcherService = inject(ResearcherService);
-  private readonly reviewerService = inject(ReviewerService);
   private readonly snackbar = inject(SnackbarService);
 
   readonly loading = signal(true);
@@ -56,20 +54,23 @@ export class PaperDetailsComponent implements OnInit {
     this.researcherService.getSubmission(this.paperId).subscribe({
       next: (data) => {
         this.paper.set(data);
+        this.loadComments(data.paperId);
         this.loading.set(false);
-
-        if (data.reviewId) {
-          this.commentsUnavailable.set(false);
-          this.reviewerService.getComments(data.reviewId).subscribe({
-            next: (comments) => this.comments.set(comments),
-            error: () => this.commentsUnavailable.set(true)
-          });
-          return;
-        }
-
-        this.commentsUnavailable.set(true);
       },
       error: () => this.loading.set(false)
+    });
+  }
+
+  private loadComments(paperId: number): void {
+    this.researcherService.getReviewComments(paperId).subscribe({
+      next: (comments) => {
+        this.comments.set(comments);
+        this.commentsUnavailable.set(false);
+      },
+      error: () => {
+        this.comments.set([]);
+        this.commentsUnavailable.set(true);
+      }
     });
   }
 

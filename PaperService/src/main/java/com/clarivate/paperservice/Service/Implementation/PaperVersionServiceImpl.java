@@ -1,6 +1,7 @@
 package com.clarivate.paperservice.Service.Implementation;
 
 import com.clarivate.paperservice.Dto.Response.PaperResponse;
+import com.clarivate.paperservice.Dto.Response.PaperDownloadResponse;
 import com.clarivate.paperservice.Entity.Paper;
 import com.clarivate.paperservice.Entity.PaperVersion;
 import com.clarivate.paperservice.Exception.ResourceNotFoundException;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -92,10 +94,57 @@ public class PaperVersionServiceImpl implements PaperVersionService {
         return paperVersion.toString();
     }
 
+    @Override
+    public PaperDownloadResponse downloadPaperVersion(Long paperId, Integer versionNumber) {
+        PaperVersion paperVersion = paperVersionRepository.findByPaperIdAndVersion(paperId, versionNumber);
+        if (paperVersion == null) {
+            throw new ResourceNotFoundException("Paper version not found");
+        }
+        List<String> references = new ArrayList<>();
+        references.add(paperVersion.getFileName());
+        references.add(paperVersion.getFilePath());
+
+        String responseFileName = references.stream()
+                .filter(this::hasText)
+                .map(this::extractFileName)
+                .filter(this::hasText)
+                .findFirst()
+                .orElse(null);
+
+        if (responseFileName == null) {
+            throw new ResourceNotFoundException("Paper file not found for this version");
+        }
+
+        for (String reference : references) {
+            if (!hasText(reference)) {
+                continue;
+            }
+            try {
+                return new PaperDownloadResponse(responseFileName, fileStorageService.loadFile(reference));
+            } catch (IOException ignored) {
+                // Try next available file reference.
+            }
+        }
+
+        throw new ResourceNotFoundException("Paper file not found for this version");
+    }
+
     public List<PaperResponse> findByPaperId(Long paperId) {
         return paperVersionRepository.findByPaperId(paperId)
                 .stream()
                 .map(paperVersion -> new PaperResponse(paperVersion.getPaper()))
                 .toList();
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.isBlank();
+    }
+
+    private String extractFileName(String fileNameOrPath) {
+        String normalized = fileNameOrPath.replace('\\', '/');
+        int lastSlash = normalized.lastIndexOf('/');
+        return lastSlash >= 0 && lastSlash < normalized.length() - 1
+                ? normalized.substring(lastSlash + 1)
+                : normalized;
     }
 }

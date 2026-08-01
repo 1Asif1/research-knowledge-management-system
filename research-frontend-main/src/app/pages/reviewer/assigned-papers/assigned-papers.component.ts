@@ -58,6 +58,7 @@ export class AssignedPapersComponent implements OnInit {
         }
 
         return (
+          (review.paperTitle ?? '').toLowerCase().includes(search) ||
           review.paperId.toString().includes(search) ||
           review.reviewId.toString().includes(search) ||
           review.currentVersion.toString().includes(search) ||

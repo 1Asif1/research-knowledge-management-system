@@ -2,6 +2,7 @@ package com.clarivate.paperservice.Service.Implementation;
 
 import com.clarivate.paperservice.Client.NotificationServiceClient;
 import com.clarivate.paperservice.Client.ReviewServiceClient;
+import com.clarivate.paperservice.Client.UserServiceClient;
 import com.clarivate.paperservice.Dto.Request.NotificationCreateRequest;
 import com.clarivate.paperservice.Dto.Request.PaperRequest;
 import com.clarivate.paperservice.Dto.Request.ResearcherSubmitPaperRequest;
@@ -11,6 +12,7 @@ import com.clarivate.paperservice.Dto.Request.ReviewUploadVersionRequest;
 import com.clarivate.paperservice.Dto.Request.UpdatePaperRequest;
 import com.clarivate.paperservice.Dto.Response.PaperDownloadResponse;
 import com.clarivate.paperservice.Dto.Response.PaperResponse;
+import com.clarivate.paperservice.Dto.Response.ReviewCommentResponse;
 import com.clarivate.paperservice.Dto.Response.ResearcherPaperResponse;
 import com.clarivate.paperservice.Dto.Response.ReviewPaperSubmissionResponse;
 import com.clarivate.paperservice.Entity.Paper;
@@ -25,6 +27,7 @@ import com.clarivate.paperservice.Service.Interface.PaperService;
 import com.clarivate.paperservice.Util.FileUtil;
 import feign.FeignException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -32,29 +35,35 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PaperServiceImpl implements PaperService {
+    private static final String REVIEW_SYNC_PENDING_STATUS = "SYNC_PENDING";
 
     private final PaperRepository paperRepository;
     private final PaperVersionRepository paperVersionRepository;
     private final FileStorageService fileStorageService;
     private final ReviewServiceClient reviewServiceClient;
     private final NotificationServiceClient notificationServiceClient;
+    private final UserServiceClient userServiceClient;
 
     @Override
     public PaperResponse SubmitPaper(PaperRequest paperRequest) {
         Paper paper = new Paper(paperRequest);
+        paper.setAuthor(resolveAuthorName(paper.getAuthorId(), paper.getAuthor()));
         paperRepository.save(paper);
-        return new PaperResponse(paper);
+        return toPaperResponse(paper);
     }
 
     @Override
     public PaperResponse getPaperById(Long id) {
         return paperRepository.findById(id)
-                .map(PaperResponse::new)
+                .map(this::toPaperResponse)
                 .orElseThrow(() -> new ResourceNotFoundException("Paper not found"));
     }
 
@@ -64,12 +73,12 @@ public class PaperServiceImpl implements PaperService {
         paper.setTitle(paperRequest.getTitle());
         paper.setDescription(paperRequest.getDescription());
         paperRepository.save(paper);
-        return new PaperResponse(paper);
+        return toPaperResponse(paper);
     }
 
     @Override
     public Page<PaperResponse> search(String keyword, Pageable pageable) {
-        return paperRepository.findByTitleContainingIgnoreCase(keyword, pageable).map(PaperResponse::new);
+        return paperRepository.findByTitleContainingIgnoreCase(keyword, pageable).map(this::toPaperResponse);
     }
 
     @Override
@@ -101,8 +110,9 @@ public class PaperServiceImpl implements PaperService {
 
         createPaperVersion(paper, storedFileName, storedFilePath, "Initial Submission");
 
+        ReviewPaperSubmissionResponse reviewResponse = null;
         try {
-            ReviewPaperSubmissionResponse reviewResponse = reviewServiceClient.submitPaper(
+            reviewResponse = reviewServiceClient.submitPaper(
                     ReviewSubmitPaperRequest.builder()
                             .title(title)
                             .abstractText(abstractText)
@@ -110,18 +120,14 @@ public class PaperServiceImpl implements PaperService {
                             .filePath(storedFilePath)
                             .researcherId(researcherId)
                             .build());
-
             paper.setReviewPaperId(reviewResponse.getPaperId());
             paperRepository.save(paper);
-            sendSubmissionNotification(paper);
-
-            return toResearcherPaperResponse(paper, reviewResponse);
         } catch (FeignException ex) {
-            throw withFileCleanup(
-                    "Paper submitted but review workflow sync failed",
-                    ex,
-                    storedFileName);
+            log.warn("Review sync pending for paper {} after local submit", paper.getId(), ex);
         }
+
+        sendSubmissionNotification(paper);
+        return toResearcherPaperResponse(paper, reviewResponse);
     }
 
     @Override
@@ -138,8 +144,9 @@ public class PaperServiceImpl implements PaperService {
 
         createPaperVersion(paper, normalizedFileName, request.getFilePath(), "Initial Submission");
 
+        ReviewPaperSubmissionResponse reviewResponse = null;
         try {
-            ReviewPaperSubmissionResponse reviewResponse = reviewServiceClient.submitPaper(
+            reviewResponse = reviewServiceClient.submitPaper(
                     ReviewSubmitPaperRequest.builder()
                             .title(request.getTitle())
                             .abstractText(request.getAbstractText())
@@ -147,15 +154,14 @@ public class PaperServiceImpl implements PaperService {
                             .filePath(request.getFilePath())
                             .researcherId(request.getResearcherId())
                             .build());
-
             paper.setReviewPaperId(reviewResponse.getPaperId());
             paperRepository.save(paper);
-            sendSubmissionNotification(paper);
-
-            return toResearcherPaperResponse(paper, reviewResponse);
         } catch (FeignException ex) {
-            throw new IntegrationException("Paper submitted but review workflow sync failed", ex);
+            log.warn("Review sync pending for paper {} after local submit", paper.getId(), ex);
         }
+
+        sendSubmissionNotification(paper);
+        return toResearcherPaperResponse(paper, reviewResponse);
     }
 
     @Override
@@ -238,21 +244,55 @@ public class PaperServiceImpl implements PaperService {
     public PaperDownloadResponse downloadCurrentPaperVersion(Long paperId) {
         Paper paper = findPaperOrThrow(paperId);
         PaperVersion latestVersion = paperVersionRepository.findTopByPaperIdOrderByVersionDesc(paperId);
+        List<String> references = new ArrayList<>();
+        if (latestVersion != null) {
+            references.add(latestVersion.getFileName());
+            references.add(latestVersion.getFilePath());
+        }
+        references.add(paper.getFileName());
+        references.add(paper.getFilePath());
 
-        String fileName = latestVersion != null && latestVersion.getFileName() != null
-                ? latestVersion.getFileName()
-                : paper.getFileName();
+        String responseFileName = references.stream()
+                .filter(this::hasText)
+                .map(this::extractFileName)
+                .filter(this::hasText)
+                .findFirst()
+                .orElse(null);
 
-        if (fileName == null || fileName.isBlank()) {
+        if (responseFileName == null) {
             throw new ResourceNotFoundException("No paper file found for this submission");
         }
 
+        for (String reference : references) {
+            if (!hasText(reference)) {
+                continue;
+            }
+            try {
+                return new PaperDownloadResponse(
+                        responseFileName,
+                        fileStorageService.loadFile(reference));
+            } catch (IOException ignored) {
+                // Try next available file reference.
+            }
+        }
+
+        throw new ResourceNotFoundException("Current paper file not found. Please upload the manuscript again.");
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ReviewCommentResponse> getResearcherReviewComments(Long paperId) {
+        Paper paper = findPaperOrThrow(paperId);
+        if (paper.getReviewPaperId() == null) {
+            return List.of();
+        }
+
         try {
-            return new PaperDownloadResponse(
-                    fileName,
-                    fileStorageService.loadFile(fileName));
-        } catch (IOException ex) {
-            throw new ResourceNotFoundException("Current paper file not found. Please upload the manuscript again.");
+            return reviewServiceClient.getReviewComments(paper.getReviewPaperId());
+        } catch (FeignException.NotFound ex) {
+            return List.of();
+        } catch (FeignException ex) {
+            throw new IntegrationException("Unable to fetch review comments", ex);
         }
     }
 
@@ -266,7 +306,7 @@ public class PaperServiceImpl implements PaperService {
                             .type("PAPER_SUBMITTED")
                             .build());
         } catch (FeignException ex) {
-            throw new IntegrationException("Paper submitted but notification creation failed", ex);
+            log.warn("Notification pending for paper {}", paper.getId(), ex);
         }
     }
 
@@ -352,11 +392,21 @@ public class PaperServiceImpl implements PaperService {
                 .title(paper.getTitle())
                 .researcherId(paper.getAuthorId())
                 .submittedDate(paper.getCreatedDate())
-                .reviewStatus(reviewResponse != null ? reviewResponse.getReviewStatus() : paper.getStatus().name())
+                .reviewStatus(resolveReviewStatus(paper, reviewResponse))
                 .currentVersion(reviewResponse != null
                         ? reviewResponse.getCurrentVersion()
                         : (fallbackVersion != null ? fallbackVersion : 1))
                 .build();
+    }
+
+    private String resolveReviewStatus(Paper paper, ReviewPaperSubmissionResponse reviewResponse) {
+        if (reviewResponse != null && reviewResponse.getReviewStatus() != null) {
+            return reviewResponse.getReviewStatus();
+        }
+        if (paper.getReviewPaperId() == null && paper.getStatus() == PaperStatus.SUBMITTED) {
+            return REVIEW_SYNC_PENDING_STATUS;
+        }
+        return paper.getStatus().name();
     }
 
     private ResourceNotFoundException notFound() {
@@ -386,6 +436,18 @@ public class PaperServiceImpl implements PaperService {
         return fileName;
     }
 
+    private boolean hasText(String value) {
+        return value != null && !value.isBlank();
+    }
+
+    private String extractFileName(String fileNameOrPath) {
+        String normalized = fileNameOrPath.replace('\\', '/');
+        int lastSlash = normalized.lastIndexOf('/');
+        return lastSlash >= 0 && lastSlash < normalized.length() - 1
+                ? normalized.substring(lastSlash + 1)
+                : normalized;
+    }
+
     private IntegrationException withFileCleanup(
             String message,
             FeignException cause,
@@ -413,11 +475,41 @@ public class PaperServiceImpl implements PaperService {
             paper.setTitle(title);
             paper.setDescription(abstractText);
             paper.setAuthorId(researcherId);
-            paper.setAuthor("User #" + researcherId);
+            paper.setAuthor(null);
             paper.setStatus(PaperStatus.SUBMITTED);
             paper.setFileName(fileName);
             paper.setFilePath(filePath);
             return paper;
         }
+    }
+
+    private PaperResponse toPaperResponse(Paper paper) {
+        String resolvedAuthor = resolveAuthorName(paper.getAuthorId(), paper.getAuthor());
+        PaperResponse response = new PaperResponse(paper);
+        response.setAuthorName(resolvedAuthor);
+        return response;
+    }
+
+    private String resolveAuthorName(Long authorId, String existingValue) {
+        if (authorId == null) {
+            return existingValue != null ? existingValue : "Unknown User";
+        }
+        try {
+            Object user = userServiceClient.getUserById(authorId);
+            if (user instanceof Map<?, ?> userMap) {
+                Object first = userMap.get("firstName");
+                Object last = userMap.get("lastName");
+                if (first instanceof String firstName && last instanceof String lastName) {
+                    return (firstName + " " + lastName).trim();
+                }
+            }
+        } catch (Exception ex) {
+            log.warn("Unable to resolve author name for user {}", authorId);
+        }
+
+        if (existingValue != null && !existingValue.isBlank()) {
+            return existingValue;
+        }
+        return "User #" + authorId;
     }
 }

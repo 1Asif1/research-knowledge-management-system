@@ -3,7 +3,7 @@
   grid-template-rows: var(--navbar-height) 1fr;
   height: 100vh;
   width: 100%;
-  background: #fbfaf7;
+  background: var(--surface-app-bg);
 }
 
 .main-layout__body {
@@ -14,5 +14,5 @@
 .main-layout__content {
   flex: 1;
   overflow-y: auto;
-  background: #fbfaf7;
+  background: var(--surface-app-bg);
 }

@@ -75,6 +75,7 @@ export class ReviewedPapersComponent implements OnInit {
         }
 
         return (
+          (review.paperTitle ?? '').toLowerCase().includes(search) ||
           review.paperId.toString().includes(search) ||
           review.reviewId.toString().includes(search) ||
           review.reviewStatus.toLowerCase().includes(search) ||

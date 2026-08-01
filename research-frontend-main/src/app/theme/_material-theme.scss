@@ -1,8 +1,8 @@
 @use '@angular/material' as mat;
 
 // Use Angular Material's M3 reference palettes for compatibility with v20.
-$rkm-primary-palette: mat.$azure-palette;
-$rkm-secondary-palette: mat.$blue-palette;
+$rkm-primary-palette: mat.$spring-green-palette;
+$rkm-secondary-palette: mat.$spring-green-palette;
 
 $rkm-theme: mat.define-theme((
   color: (

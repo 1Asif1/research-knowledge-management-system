@@ -7,19 +7,27 @@ import com.clarivate.reviewservice.Enums.AssignmentStatus;
 import com.clarivate.reviewservice.Enums.EditorDecision;
 import com.clarivate.reviewservice.Enums.ReviewStatus;
 import com.clarivate.reviewservice.Enums.ReviewerRecommendation;
+import com.clarivate.reviewservice.Repository.PaperSubmissionRepository;
 import com.clarivate.reviewservice.Repository.ReviewProcessRepository;
 import com.clarivate.reviewservice.Repository.ReviewerAssignmentRepository;
 import com.clarivate.reviewservice.Repository.ReviewHistoryRepository;
 import com.clarivate.reviewservice.Service.EditorService;
 import com.clarivate.reviewservice.dto.Request.AssignReviewerRequest;
 import com.clarivate.reviewservice.dto.Request.EditorDecisionRequest;
+import com.clarivate.reviewservice.dto.Response.AvailableReviewerResponse;
 import com.clarivate.reviewservice.dto.Response.ReviewProcessResponse;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Map;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -30,6 +38,10 @@ public class EditorServiceImpl implements EditorService {
     private final ReviewProcessRepository reviewProcessRepository;
     private final ReviewerAssignmentRepository reviewerAssignmentRepository;
     private final ReviewHistoryRepository reviewHistoryRepository;
+    private final PaperSubmissionRepository paperSubmissionRepository;
+    private final RestTemplate restTemplate = new RestTemplate();
+    @Value("${user-service.url:http://localhost:8081}")
+    private String userServiceUrl;
 
     @Override
     public ReviewProcessResponse assignReviewer(AssignReviewerRequest request) {
@@ -116,10 +128,36 @@ public class EditorServiceImpl implements EditorService {
         return mapToResponse(reviewProcess);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<AvailableReviewerResponse> getAvailableReviewers() {
+        String endpoint = userServiceUrl + "/users";
+        try {
+            ResponseEntity<UserDirectoryEntry[]> response = restTemplate.getForEntity(endpoint, UserDirectoryEntry[].class);
+            UserDirectoryEntry[] users = response.getBody();
+            if (users == null) {
+                return Collections.emptyList();
+            }
+            return Arrays.stream(users)
+                    .filter(user -> user.role != null && "REVIEWER".equalsIgnoreCase(user.role))
+                    .map(user -> AvailableReviewerResponse.builder()
+                            .id(user.id)
+                            .firstName(user.firstName)
+                            .lastName(user.lastName)
+                            .build())
+                    .toList();
+        } catch (Exception ex) {
+            return Collections.emptyList();
+        }
+    }
+
     private ReviewProcessResponse mapToResponse(ReviewProcess review) {
         return ReviewProcessResponse.builder()
                 .reviewId(review.getReviewId())
                 .paperId(review.getPaperId())
+                .paperTitle(paperSubmissionRepository.findById(Math.toIntExact(review.getPaperId()))
+                        .map(submission -> submission.getTitle())
+                        .orElse("Paper #" + review.getPaperId()))
                 .editorId(review.getEditorId() > 0 ? review.getEditorId() : null)
                 .reviewerId(review.getAssignedReviewerId() > 0 ? review.getAssignedReviewerId() : null)
                 .currentVersion(review.getCurrentVersion())
@@ -129,5 +167,12 @@ public class EditorServiceImpl implements EditorService {
                 .editorDecision(review.getEditorDecision() != null ?
                         EditorDecision.valueOf(review.getEditorDecision()) : null)
                 .build();
+    }
+
+    private static final class UserDirectoryEntry {
+        public Long id;
+        public String firstName;
+        public String lastName;
+        public String role;
     }
 }

@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '@env/environment';
-import { PaperSubmissionResponse } from '@core/models';
+import { PaperSubmissionResponse, ReviewCommentResponse } from '@core/models';
 
 @Injectable({ providedIn: 'root' })
 export class ResearcherService {
@@ -33,6 +33,10 @@ export class ResearcherService {
 
   getSubmission(paperId: number): Observable<PaperSubmissionResponse> {
     return this.http.get<PaperSubmissionResponse>(`${this.baseUrl}/papers/${paperId}`);
+  }
+
+  getReviewComments(paperId: number): Observable<ReviewCommentResponse[]> {
+    return this.http.get<ReviewCommentResponse[]>(`${this.baseUrl}/papers/${paperId}/comments`);
   }
 
   downloadCurrentPaperPdf(paperId: number): Observable<HttpResponse<Blob>> {

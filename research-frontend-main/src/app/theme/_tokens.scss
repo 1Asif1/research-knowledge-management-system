@@ -1,60 +1,60 @@
 // =========================================================================
-// DESIGN TOKENS — Research Knowledge Management System
-// Palette: white / blue / gray. No bright/saturated colors. Academic, calm.
+// DESIGN TOKENS — ScholarFlow (Vichy palette)
+// Palette anchors from reference: #BBBFBF, #878787, #05AD98, #FFFFFF
 // =========================================================================
 
 :root {
-  // ---- Brand / Primary (deep academic blue) ----
-  --color-primary-50:  #eef3fb;
-  --color-primary-100: #d6e2f5;
-  --color-primary-200: #adc5eb;
-  --color-primary-300: #7fa3de;
-  --color-primary-400: #4f7fce;
-  --color-primary-500: #2c5fb8;
-  --color-primary-600: #1f4a97;
-  --color-primary-700: #1a3c7a;
-  --color-primary-800: #172f5f;
-  --color-primary-900: #142547;
+  // ---- Brand / Primary (vichy teal) ----
+  --color-primary-50:  #e6f7f4;
+  --color-primary-100: #c0ebe4;
+  --color-primary-200: #97dfd3;
+  --color-primary-300: #6ed3c1;
+  --color-primary-400: #4bc9b3;
+  --color-primary-500: #05ad98;
+  --color-primary-600: #049c89;
+  --color-primary-700: #038378;
+  --color-primary-800: #026b61;
+  --color-primary-900: #01524a;
 
-  // ---- Secondary / Slate (neutral blue-gray for accents) ----
-  --color-secondary-100: #e7ebf1;
-  --color-secondary-300: #aab6c7;
-  --color-secondary-500: #5c6d84;
-  --color-secondary-700: #37455a;
+  // ---- Secondary / Neutral gray ----
+  --color-secondary-100: #f0f1f1;
+  --color-secondary-300: #d0d3d3;
+  --color-secondary-500: #878787;
+  --color-secondary-700: #6f6f6f;
 
   // ---- Neutrals ----
   --color-white:     #ffffff;
-  --color-gray-25:   #fbfbfc;
-  --color-gray-50:   #f5f6f8;
-  --color-gray-100:  #eceef2;
-  --color-gray-200:  #dde1e8;
-  --color-gray-300:  #c3c9d3;
-  --color-gray-400:  #9aa2b1;
-  --color-gray-500:  #6f7787;
-  --color-gray-600:  #545c6b;
-  --color-gray-700:  #3d4351;
-  --color-gray-800:  #282c37;
-  --color-gray-900:  #181b22;
+  --color-gray-25:   #ffffff;
+  --color-gray-50:   #f8f9f9;
+  --color-gray-100:  #eceeee;
+  --color-gray-200:  #dbdede;
+  --color-gray-300:  #bbbfbf;
+  --color-gray-400:  #a2a6a6;
+  --color-gray-500:  #878787;
+  --color-gray-600:  #6f6f6f;
+  --color-gray-700:  #565656;
+  --color-gray-800:  #3f3f3f;
+  --color-gray-900:  #262626;
 
-  // ---- Semantic status colors (muted, not neon) ----
-  --color-success-bg:    #e7f3ea;
-  --color-success-fg:    #276b3a;
-  --color-success-border:#bfe0c8;
+  // ---- Semantic status colors (kept within palette family) ----
+  --color-success-bg:    var(--color-primary-50);
+  --color-success-fg:    var(--color-primary-700);
+  --color-success-border:var(--color-primary-200);
 
-  --color-warning-bg:    #fbf1e2;
-  --color-warning-fg:    #8a5a12;
-  --color-warning-border:#f1d9ac;
+  --color-warning-bg:    #f2f3f3;
+  --color-warning-fg:    var(--color-gray-700);
+  --color-warning-border:var(--color-gray-200);
 
-  --color-danger-bg:     #fbe9e9;
-  --color-danger-fg:     #a3312f;
-  --color-danger-border: #f0c4c3;
+  --color-danger-bg:     #f2f3f3;
+  --color-danger-fg:     var(--color-gray-800);
+  --color-danger-border: var(--color-gray-200);
 
-  --color-info-bg:       #e9f1fb;
-  --color-info-fg:       #235a96;
-  --color-info-border:   #c6dcf3;
+  --color-info-bg:       var(--color-primary-50);
+  --color-info-fg:       var(--color-primary-700);
+  --color-info-border:   var(--color-primary-200);
 
   // ---- Surfaces ----
-  --surface-app-bg:      #fbfaf7;
+  --surface-app-bg:      var(--color-white);
   --surface-card-bg:     var(--color-white);
   --surface-sidebar-bg:  var(--color-white);
   --surface-navbar-bg:   var(--color-white);
@@ -69,6 +69,11 @@
   --text-tertiary:   var(--color-gray-400);
   --text-on-primary: var(--color-white);
   --text-link:       var(--color-primary-600);
+
+  // ---- Legacy aliases used by some feature styles ----
+  --color-primary: var(--color-primary-700);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
 
   // ---- Radius ----
   --radius-sm: 6px;

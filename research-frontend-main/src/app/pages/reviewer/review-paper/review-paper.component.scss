@@ -204,6 +204,14 @@
   line-height: 1.65;
 }
 
+.paper-content__frame {
+  width: 100%;
+  min-height: 700px;
+  border: 1px solid rgba(0, 0, 0, 0.09);
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
 .content-message,
 .empty-comments {
   display: flex;

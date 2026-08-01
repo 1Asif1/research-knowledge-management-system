@@ -3,6 +3,7 @@ package com.clarivate.paperservice.Controller;
 import com.clarivate.paperservice.Dto.Request.ResearcherSubmitPaperRequest;
 import com.clarivate.paperservice.Dto.Request.ResearcherUploadVersionRequest;
 import com.clarivate.paperservice.Dto.Response.PaperDownloadResponse;
+import com.clarivate.paperservice.Dto.Response.ReviewCommentResponse;
 import com.clarivate.paperservice.Dto.Response.ResearcherPaperResponse;
 import com.clarivate.paperservice.Service.Interface.PaperService;
 import jakarta.validation.Valid;
@@ -71,6 +72,11 @@ public class ResearcherPaperController {
     @GetMapping("/papers/{paperId}")
     public ResponseEntity<ResearcherPaperResponse> getSubmission(@PathVariable Long paperId) {
         return ResponseEntity.ok(paperService.getResearcherSubmission(paperId));
+    }
+
+    @GetMapping("/papers/{paperId}/comments")
+    public ResponseEntity<List<ReviewCommentResponse>> getReviewComments(@PathVariable Long paperId) {
+        return ResponseEntity.ok(paperService.getResearcherReviewComments(paperId));
     }
 
     @GetMapping(value = "/papers/{paperId}/download", produces = MediaType.APPLICATION_PDF_VALUE)

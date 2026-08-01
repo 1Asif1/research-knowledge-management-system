@@ -3,6 +3,7 @@ package com.clarivate.reviewservice.Controller;
 import com.clarivate.reviewservice.Service.EditorService;
 import com.clarivate.reviewservice.dto.Request.AssignReviewerRequest;
 import com.clarivate.reviewservice.dto.Request.EditorDecisionRequest;
+import com.clarivate.reviewservice.dto.Response.AvailableReviewerResponse;
 import com.clarivate.reviewservice.dto.Response.ReviewProcessResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,12 @@ public class EditorController {
     @GetMapping("/reviews/pending")
     public ResponseEntity<List<ReviewProcessResponse>> getPendingReviews() {
         List<ReviewProcessResponse> responses = editorService.getPendingReviews();
+        return ResponseEntity.ok(responses);
+    }
+
+    @GetMapping("/reviewers")
+    public ResponseEntity<List<AvailableReviewerResponse>> getAvailableReviewers() {
+        List<AvailableReviewerResponse> responses = editorService.getAvailableReviewers();
         return ResponseEntity.ok(responses);
     }
 

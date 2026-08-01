@@ -3,6 +3,7 @@ package com.clarivate.reviewservice.Service;
 import com.clarivate.reviewservice.dto.Request.AssignReviewerRequest;
 import com.clarivate.reviewservice.dto.Request.EditorDecisionRequest;
 import com.clarivate.reviewservice.dto.Request.ReviewCommentRequest;
+import com.clarivate.reviewservice.dto.Response.AvailableReviewerResponse;
 import com.clarivate.reviewservice.dto.Response.ReviewCommentResponse;
 import com.clarivate.reviewservice.dto.Response.ReviewProcessResponse;
 
@@ -14,4 +15,5 @@ public interface EditorService {
     List<ReviewProcessResponse> getPendingReviews();
     List<ReviewProcessResponse> getAssignedReviews(Long editorId);
     ReviewProcessResponse getReview(Long reviewId);
+    List<AvailableReviewerResponse> getAvailableReviewers();
 }

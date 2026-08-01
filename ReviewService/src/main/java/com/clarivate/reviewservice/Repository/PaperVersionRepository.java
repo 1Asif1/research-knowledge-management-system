@@ -18,4 +18,9 @@ public interface PaperVersionRepository extends JpaRepository<PaperVersion, Long
             Long paperId,
             int versionNumber
     );
+
+    Optional<PaperVersion> findByVersionIdAndPaperSubmissionPaperId(
+            Long versionId,
+            Long paperId
+    );
 }

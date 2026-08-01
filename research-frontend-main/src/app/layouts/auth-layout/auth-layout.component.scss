@@ -2,7 +2,7 @@
   display: grid;
   place-items: center;
   min-height: 100vh;
-  background: #ffffff;
+  background: var(--surface-app-bg);
 }
 
 .auth-layout__wrap {
@@ -18,7 +18,7 @@
   h1 {
     margin: 0;
     font-family: 'Source Serif 4', Georgia, serif;
-    color: #0e274f;
+    color: var(--text-primary);
     font-size: 54px;
     font-weight: 600;
   }
@@ -26,14 +26,14 @@
   span {
     width: 92px;
     height: 1px;
-    background: #cf9a1c;
+    background: var(--color-primary-500);
     display: inline-block;
     margin: 10px 0;
   }
 
   p {
     margin: 0;
-    color: #405274;
+    color: var(--text-secondary);
     font-size: 15px;
     letter-spacing: 0.06em;
   }

@@ -2,6 +2,7 @@
 import { StatusIntent } from './paper-status.enum';
 
 export enum ReviewStatus {
+  SYNC_PENDING = 'SYNC_PENDING',
   SUBMITTED = 'SUBMITTED',
   REVIEWER_ASSIGNED = 'REVIEWER_ASSIGNED',
   UNDER_REVIEW = 'UNDER_REVIEW',
@@ -34,6 +35,7 @@ export enum AssignmentStatus {
 
 export function reviewStatusLabel(status: ReviewStatus | string | null | undefined): string {
   switch (status) {
+    case ReviewStatus.SYNC_PENDING: return 'Sync Pending';
     case ReviewStatus.SUBMITTED: return 'Submitted';
     case ReviewStatus.REVIEWER_ASSIGNED: return 'Reviewer Assigned';
     case ReviewStatus.UNDER_REVIEW: return 'Under Review';
@@ -54,6 +56,7 @@ export function reviewStatusIntent(status: ReviewStatus | string | null | undefi
     case ReviewStatus.REVIEWER_ASSIGNED:
     case ReviewStatus.RESUBMITTED: return 'info';
     case ReviewStatus.CORRECTION_REQUESTED: return 'warning';
+    case ReviewStatus.SYNC_PENDING: return 'warning';
     case ReviewStatus.REJECTED: return 'danger';
     case ReviewStatus.SUBMITTED: return 'neutral';
     default: return 'neutral';

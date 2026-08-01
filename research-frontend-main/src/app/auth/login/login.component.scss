@@ -1,13 +1,13 @@
 .auth-card {
   width: 100%;
   max-width: 460px;
-  border: 1px solid #e1e6ef;
+  border: 1px solid var(--surface-border);
   border-radius: 14px;
   padding: 28px;
 
   h2 {
     font-size: 20px;
-    color: #3c4d69;
+    color: var(--text-secondary);
     margin-bottom: 20px;
     font-weight: 500;
   }
@@ -71,7 +71,7 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  background: #1f2a3b !important;
+  background: var(--color-primary-700) !important;
   border-radius: 8px;
 
   ::ng-deep .mat-mdc-progress-spinner circle {
@@ -82,11 +82,11 @@
 .auth-card__footnote {
   margin-top: 22px;
   font-size: 17px;
-  color: #4a5b76;
+  color: var(--text-secondary);
   text-align: center;
 
   a {
-    color: #ce9413;
+    color: var(--color-primary-600);
     text-decoration: none;
   }
 }

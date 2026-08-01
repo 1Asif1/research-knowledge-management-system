@@ -43,7 +43,7 @@ public class JwtAuthenticationFilter implements GlobalFilter {
         }
 
         String role = jwtUtil.extractRole(token);
-        if (!isRoleAuthorized(path, role)) {
+        if (!isRoleAuthorized(path, role, method)) {
             exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
             return exchange.getResponse().setComplete();
         }
@@ -61,7 +61,7 @@ public class JwtAuthenticationFilter implements GlobalFilter {
         return path.equals("/users/login") && HttpMethod.POST.equals(method);
     }
 
-    private boolean isRoleAuthorized(String path, String role) {
+    private boolean isRoleAuthorized(String path, String role, HttpMethod method) {
         if (path.startsWith("/api/researcher/")) {
             return "RESEARCHER".equals(role) || "EDITOR".equals(role) || "ADMIN".equals(role);
         }
@@ -75,7 +75,10 @@ public class JwtAuthenticationFilter implements GlobalFilter {
             return "EDITOR".equals(role) || "ADMIN".equals(role);
         }
         if (path.startsWith("/users")) {
-            return "ADMIN".equals(role);
+            if ("ADMIN".equals(role)) {
+                return true;
+            }
+            return "EDITOR".equals(role) && HttpMethod.GET.equals(method);
         }
         return true;
     }

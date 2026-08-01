@@ -69,7 +69,7 @@
 
           <p>
             Review #{{ review()?.reviewId }}
-            · Paper #{{ paper()?.id }}
+            · {{ paper()?.title || ('Paper #' + paper()?.id) }}
           </p>
         </div>
       </div>
@@ -155,7 +155,7 @@
               mat-stroked-button
               type="button"
               (click)="loadVersionContent()"
-              [disabled]="loadingContent() || !review()?.currentVersionId"
+              [disabled]="loadingContent() || !review()?.currentVersion"
             >
               <mat-icon>refresh</mat-icon>
               Load Content
@@ -175,15 +175,17 @@
             <p>{{ contentError() }}</p>
           </div>
 
-          <pre
-            *ngIf="!loadingContent() && versionContent()"
-            class="paper-content__viewer"
-          >{{ versionContent() }}</pre>
+          <iframe
+            *ngIf="!loadingContent() && paperPdfUrl()"
+            class="paper-content__frame"
+            [src]="paperPdfUrl()"
+            title="Current paper PDF"
+          ></iframe>
 
           <div
             *ngIf="
               !loadingContent() &&
-              !versionContent() &&
+              !paperPdfUrl() &&
               !contentError()
             "
             class="content-message"

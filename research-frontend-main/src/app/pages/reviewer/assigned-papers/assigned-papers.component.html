@@ -93,8 +93,8 @@
         </div>
 
         <div>
-          <strong>Paper #{{ review.paperId }}</strong>
-          <span>Assigned research paper</span>
+          <strong>{{ review.paperTitle || 'Untitled Paper' }}</strong>
+          <span>Paper ID #{{ review.paperId }}</span>
         </div>
       </div>
 

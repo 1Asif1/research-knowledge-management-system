@@ -14,6 +14,10 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
+      if (req.headers.get('X-Skip-Global-Error') === 'true') {
+        return throwError(() => error);
+      }
+
       switch (error.status) {
         case 401:
           tokenStorage.clearSession();

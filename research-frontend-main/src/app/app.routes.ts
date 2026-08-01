@@ -92,6 +92,12 @@ export const routes: Routes = [
             loadComponent: () =>
               import('./features/notifications/notifications.component')
                 .then(m => m.NotificationsComponent)
+          },
+          {
+            path: 'profile',
+            loadComponent: () =>
+              import('@shared/components/profile/profile.component')
+                .then(m => m.ProfileComponent)
           }
         ]
       },
@@ -140,6 +146,12 @@ export const routes: Routes = [
             loadComponent: () =>
               import('./features/notifications/notifications.component')
                 .then(m => m.NotificationsComponent)
+          },
+          {
+            path: 'profile',
+            loadComponent: () =>
+              import('@shared/components/profile/profile.component')
+                .then(m => m.ProfileComponent)
           }
         ]
       }

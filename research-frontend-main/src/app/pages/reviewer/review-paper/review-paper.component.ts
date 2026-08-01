@@ -1,12 +1,14 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  OnDestroy,
   OnInit,
   computed,
   inject,
   signal
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import {
   FormBuilder,
@@ -63,7 +65,7 @@ interface RecommendationOption {
   styleUrl: './review-paper.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ReviewPaperComponent implements OnInit {
+export class ReviewPaperComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly formBuilder = inject(FormBuilder);
@@ -72,6 +74,7 @@ export class ReviewPaperComponent implements OnInit {
   private readonly reviewerService = inject(ReviewerService);
   private readonly paperService = inject(PaperService);
   private readonly tokenStorage = inject(TokenStorageService);
+  private readonly sanitizer = inject(DomSanitizer);
 
   readonly loading = signal(true);
   readonly loadingContent = signal(false);
@@ -85,6 +88,8 @@ export class ReviewPaperComponent implements OnInit {
   readonly paper = signal<PaperResponse | null>(null);
   readonly comments = signal<ReviewCommentResponse[]>([]);
   readonly versionContent = signal('');
+  readonly paperPdfUrl = signal<SafeResourceUrl | null>(null);
+  private rawPaperPdfUrl: string | null = null;
 
   readonly reviewId = signal<number | null>(null);
 
@@ -206,7 +211,7 @@ export class ReviewPaperComponent implements OnInit {
         this.paper.set(paper);
         this.loading.set(false);
 
-        if (this.review()?.currentVersionId) {
+        if (this.review()?.currentVersion) {
           this.loadVersionContent();
         }
       },
@@ -240,7 +245,7 @@ export class ReviewPaperComponent implements OnInit {
   loadVersionContent(): void {
     const review = this.review();
 
-    if (!review?.currentVersionId) {
+    if (!review?.currentVersion) {
       this.contentError.set(
         'No file is connected to the current paper version.'
       );
@@ -249,25 +254,31 @@ export class ReviewPaperComponent implements OnInit {
 
     this.loadingContent.set(true);
     this.contentError.set('');
+    this.versionContent.set('');
+    this.clearPdfUrl();
 
     this.paperService
-      .getPaperVersionContent(
+      .downloadPaperPdfForReviewer(
         review.paperId,
-        review.currentVersionId
+        review.currentVersion,
+        true
       )
       .subscribe({
-        next: (content) => {
-          this.versionContent.set(content);
-          this.loadingContent.set(false);
+        next: (pdfBlob) => {
+          this.setPaperPdfBlob(pdfBlob);
         },
         error: (error) => {
-          console.error('Failed to load paper content:', error);
-          this.contentError.set(
-            'Unable to load the current paper version.'
-          );
-          this.loadingContent.set(false);
+          if (error?.status === 404) {
+            this.loadCurrentPaperPdfFallback(review.paperId);
+            return;
+          }
+          this.handlePaperContentLoadError(error);
         }
       });
+  }
+
+  ngOnDestroy(): void {
+    this.clearPdfUrl();
   }
 
   submitComment(): void {
@@ -400,5 +411,46 @@ export class ReviewPaperComponent implements OnInit {
 
   formatDate(date: string): string {
     return new Date(date).toLocaleString();
+  }
+
+  private clearPdfUrl(): void {
+    if (this.rawPaperPdfUrl) {
+      URL.revokeObjectURL(this.rawPaperPdfUrl);
+      this.rawPaperPdfUrl = null;
+    }
+    this.paperPdfUrl.set(null);
+  }
+
+  private loadCurrentPaperPdfFallback(paperId: number): void {
+    this.paperService.downloadCurrentPaperPdfForReviewer(paperId, true).subscribe({
+      next: (pdfBlob) => {
+        this.setPaperPdfBlob(pdfBlob);
+      },
+      error: (fallbackError) => {
+        this.handlePaperContentLoadError(fallbackError);
+      }
+    });
+  }
+
+  private setPaperPdfBlob(pdfBlob: Blob): void {
+    if (!pdfBlob || pdfBlob.size === 0) {
+      this.contentError.set('Current version content is empty.');
+      this.loadingContent.set(false);
+      return;
+    }
+
+    const rawUrl = URL.createObjectURL(pdfBlob);
+    this.rawPaperPdfUrl = rawUrl;
+    this.paperPdfUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(rawUrl));
+    this.loadingContent.set(false);
+  }
+
+  private handlePaperContentLoadError(error: unknown): void {
+    console.error('Failed to load paper content:', error);
+    const status = (error as { status?: number } | null)?.status;
+    this.contentError.set(status === 404
+      ? 'Current version content is not available yet.'
+      : 'Unable to load the current paper version.');
+    this.loadingContent.set(false);
   }
 }

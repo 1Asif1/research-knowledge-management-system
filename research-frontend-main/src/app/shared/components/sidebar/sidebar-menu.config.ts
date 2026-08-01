@@ -6,7 +6,7 @@ export interface SidebarMenuItem {
   exact?: boolean;
 }
 
-// Per-role menus aligned to the RKMS screenshots.
+// Per-role menus for ScholarFlow.
 export const SIDEBAR_MENUS: Record<Role, SidebarMenuItem[]> = {
   [Role.RESEARCHER]: [
     {
@@ -36,7 +36,8 @@ export const SIDEBAR_MENUS: Record<Role, SidebarMenuItem[]> = {
     { label: 'Papers', route: '/editor/papers' },
     { label: 'Reviews', route: '/editor/reviews' },
     { label: 'Reports', route: '/editor/reports' },
-    { label: 'Notifications', route: '/editor/notifications' }
+    { label: 'Notifications', route: '/editor/notifications' },
+    { label: 'Profile', route: '/editor/profile' }
   ],
   [Role.REVIEWER]: [
     {
@@ -66,6 +67,7 @@ export const SIDEBAR_MENUS: Record<Role, SidebarMenuItem[]> = {
     { label: 'Papers', route: '/admin/papers' },
     { label: 'Reports', route: '/admin/reports' },
     { label: 'Notifications', route: '/admin/notifications' },
-    { label: 'Manage Users', route: '/admin/users' }
+    { label: 'Manage Users', route: '/admin/users' },
+    { label: 'Profile', route: '/admin/profile' }
   ]
 };

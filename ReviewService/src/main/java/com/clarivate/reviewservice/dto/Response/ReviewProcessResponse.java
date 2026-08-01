@@ -20,6 +20,8 @@ public class ReviewProcessResponse {
 
     private Long paperId;
 
+    private String paperTitle;
+
     private Long editorId;
 
     private Long reviewerId;
