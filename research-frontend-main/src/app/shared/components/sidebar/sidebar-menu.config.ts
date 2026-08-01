@@ -38,12 +38,37 @@ export const SIDEBAR_MENUS: Record<Role, SidebarMenuItem[]> = {
     }
   ],
   [Role.EDITOR]: [
-    { label: 'Dashboard', route: '/editor/dashboard', exact: true, icon: 'dashboard' },
-    { label: 'Papers', route: '/editor/papers', icon: 'folder' },
-    { label: 'Reviews', route: '/editor/reviews', icon: 'fact_check' },
-    { label: 'Reports', route: '/editor/reports', icon: 'assessment' },
-    { label: 'Notifications', route: '/editor/notifications', icon: 'notifications' },
-    { label: 'Profile', route: '/editor/profile', icon: 'person' }
+    {
+      label: 'Dashboard',
+      route: '/editor/dashboard',
+      exact: true,
+      icon: 'dashboard'
+    },
+    {
+      label: 'Papers',
+      route: '/editor/papers',
+      icon: 'folder'
+    },
+    {
+      label: 'Assign Reviewer',
+      route: '/editor/assign-reviewer',
+      icon: 'person_add'
+    },
+    {
+      label: 'Editorial Decisions',
+      route: '/editor/decisions',
+      icon: 'gavel'
+    },
+    {
+      label: 'Notifications',
+      route: '/editor/notifications',
+      icon: 'notifications'
+    },
+    {
+      label: 'Profile',
+      route: '/editor/profile',
+      icon: 'person'
+    }
   ],
   [Role.REVIEWER]: [
     {

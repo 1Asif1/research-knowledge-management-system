@@ -1,4 +1,4 @@
-.editor-dashboard {
+.editor-papers {
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -21,126 +21,96 @@
   margin: 0;
 }
 
-.page-header a mat-icon {
+.page-header button mat-icon {
   margin-right: 7px;
 }
 
-.stats-grid {
+.workflow-stats {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 14px;
 }
 
-.stat-card {
+.workflow-card {
   display: flex;
-  align-items: center;
-  gap: 15px;
-  min-height: 104px;
-  padding: 20px;
-}
-
-.stat-card__icon {
-  display: flex;
-  width: 50px;
-  height: 50px;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  border-radius: 14px;
-}
-
-.stat-card__icon--total {
-  background: #eef4ff;
-  color: #175cd3;
-}
-
-.stat-card__icon--pending {
-  background: #fff3e8;
-  color: #b54708;
-}
-
-.stat-card__icon--review {
-  background: #f4ebff;
-  color: #7f56d9;
-}
-
-.stat-card__icon--decision {
-  background: #fff7e8;
-  color: #8a4b00;
-}
-
-.stat-card__icon--accepted {
-  background: #ecfdf3;
-  color: #067647;
-}
-
-.stat-card__icon--rejected {
-  background: #fef3f2;
-  color: #b42318;
-}
-
-.stat-card span,
-.stat-card strong {
-  display: block;
-}
-
-.stat-card span {
-  margin-bottom: 4px;
-  color: var(--color-text-secondary, #667085);
-  font-size: 13px;
-}
-
-.stat-card strong {
-  font-size: 27px;
-  line-height: 1;
-}
-
-.dashboard-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 320px;
-  gap: 20px;
-  align-items: start;
-}
-
-.attention-card {
-  overflow: hidden;
-}
-
-.section-header {
-  display: flex;
+  min-height: 118px;
+  padding: 17px;
+  flex-direction: column;
   align-items: flex-start;
-  justify-content: space-between;
-  gap: 20px;
-  padding: 22px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+  border: 1px solid transparent;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  transition:
+    transform 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease;
 }
 
-.section-header h2 {
-  margin: 0 0 6px;
-  font-size: 20px;
+.workflow-card:hover {
+  transform: translateY(-2px);
 }
 
-.section-header p {
-  margin: 0;
+.workflow-card--active {
+  border-color: var(--color-primary, #193b65);
+  box-shadow: 0 0 0 2px rgba(25, 59, 101, 0.08);
+}
+
+.workflow-card mat-icon {
+  margin-bottom: 15px;
+  color: var(--color-primary, #193b65);
+}
+
+.workflow-card span {
+  margin-bottom: 5px;
   color: var(--color-text-secondary, #667085);
-  font-size: 14px;
+  font-size: 12px;
+}
+
+.workflow-card strong {
+  font-size: 25px;
+}
+
+.papers-toolbar {
+  display: grid;
+  grid-template-columns:
+    minmax(280px, 1fr)
+    minmax(220px, 290px)
+    auto;
+  gap: 16px;
+  align-items: center;
+  padding: 18px 20px;
+}
+
+.papers-toolbar mat-form-field {
+  width: 100%;
+  margin-bottom: -22px;
+}
+
+.papers-toolbar button mat-icon {
+  margin-right: 6px;
+}
+
+.papers-table {
+  overflow: hidden;
 }
 
 .papers-table__header,
 .papers-table__row {
   display: grid;
   grid-template-columns:
-    minmax(230px, 1.45fr)
+    minmax(240px, 1.45fr)
+    minmax(130px, 0.75fr)
+    minmax(110px, 0.65fr)
     minmax(135px, 0.75fr)
-    minmax(115px, 0.65fr)
-    minmax(135px, 0.75fr)
-    minmax(150px, 0.8fr);
+    minmax(125px, 0.7fr)
+    minmax(145px, 0.8fr);
   gap: 14px;
   align-items: center;
 }
 
 .papers-table__header {
-  padding: 14px 20px;
+  padding: 15px 20px;
   background: rgba(25, 59, 101, 0.04);
   color: var(--color-text-secondary, #667085);
   font-size: 12px;
@@ -151,7 +121,7 @@
 .papers-table__row {
   min-height: 92px;
   padding: 16px 20px;
-  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  border-top: 1px solid rgba(0, 0, 0, 0.07);
 }
 
 .papers-table__row:hover {
@@ -231,59 +201,9 @@
   margin-right: 6px;
 }
 
-.quick-actions {
-  padding: 20px;
-}
-
-.quick-actions h2 {
-  margin: 0 0 10px;
-}
-
-.quick-action {
-  display: grid;
-  grid-template-columns: 42px 1fr auto;
-  gap: 12px;
-  align-items: center;
-  padding: 15px 0;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.07);
-  color: inherit;
-  text-decoration: none;
-}
-
-.quick-action:last-child {
-  border-bottom: none;
-}
-
-.quick-action:hover strong {
-  color: var(--color-primary, #193b65);
-}
-
-.quick-action__icon {
-  display: flex;
-  width: 42px;
-  height: 42px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 11px;
-  background: rgba(25, 59, 101, 0.07);
-  color: var(--color-primary, #193b65);
-}
-
-.quick-action strong,
-.quick-action span {
-  display: block;
-}
-
-.quick-action span {
-  margin-top: 3px;
-  color: var(--color-text-secondary, #667085);
-  font-size: 12px;
-  line-height: 1.4;
-}
-
 .empty-state {
   display: flex;
-  min-height: 300px;
+  min-height: 320px;
   padding: 40px 20px;
   flex-direction: column;
   align-items: center;
@@ -294,7 +214,7 @@
 .empty-state > mat-icon {
   width: 58px;
   height: 58px;
-  margin-bottom: 15px;
+  margin-bottom: 16px;
   color: var(--color-text-secondary, #98a2b3);
   font-size: 58px;
 }
@@ -304,8 +224,8 @@
 }
 
 .empty-state p {
-  max-width: 420px;
-  margin: 0;
+  max-width: 430px;
+  margin: 0 0 18px;
   color: var(--color-text-secondary, #667085);
 }
 
@@ -330,17 +250,13 @@
   color: var(--color-text-secondary, #667085);
 }
 
-@media (max-width: 1200px) {
-  .stats-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .dashboard-grid {
-    grid-template-columns: 1fr;
+@media (max-width: 1250px) {
+  .workflow-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
-@media (max-width: 950px) {
+@media (max-width: 1050px) {
   .papers-table__header {
     display: none;
   }
@@ -350,12 +266,16 @@
   }
 }
 
-@media (max-width: 650px) {
+@media (max-width: 760px) {
   .page-header {
     flex-direction: column;
   }
 
-  .stats-grid {
+  .workflow-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .papers-toolbar {
     grid-template-columns: 1fr;
   }
 
@@ -365,5 +285,11 @@
 
   .papers-table__row a {
     width: 100%;
+  }
+}
+
+@media (max-width: 500px) {
+  .workflow-stats {
+    grid-template-columns: 1fr;
   }
 }

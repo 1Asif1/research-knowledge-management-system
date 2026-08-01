@@ -1,28 +1,24 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  OnInit,
   computed,
+  inject,
   signal
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { forkJoin } from 'rxjs';
 
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 
-interface EditorQueueItem {
-  reviewId: number;
-  paperId: number;
-  title: string;
-  researcherName: string;
-  status:
-    | 'SUBMITTED'
-    | 'UNDER_REVIEW'
-    | 'REVISION_REQUESTED'
-    | 'REVIEW_COMPLETED';
-  submittedDate: string;
-  assignedReviewers: number;
-}
+import { EditorService } from '@core/services/editor.service';
+import { TokenStorageService } from '@core/services/token-storage.service';
+import { ReviewProcessResponse } from '@core/models';
+
+import { LoadingSpinnerComponent } from
+  '@shared/components/loading-spinner/loading-spinner.component';
 
 @Component({
   selector: 'app-editor-dashboard',
@@ -31,104 +27,325 @@ interface EditorQueueItem {
     CommonModule,
     RouterModule,
     MatButtonModule,
-    MatIconModule
+    MatIconModule,
+    LoadingSpinnerComponent
   ],
   templateUrl: './editor-dashboard.component.html',
   styleUrl: './editor-dashboard.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class EditorDashboardComponent {
-  readonly queueItems = signal<EditorQueueItem[]>([
-    {
-      reviewId: 101,
-      paperId: 21,
-      title: 'Artificial Intelligence in Healthcare',
-      researcherName: 'Rahul Sharma',
-      status: 'SUBMITTED',
-      submittedDate: '2026-07-31T09:30:00',
-      assignedReviewers: 0
-    },
-    {
-      reviewId: 102,
-      paperId: 22,
-      title: 'Cloud Security Using Zero Trust Architecture',
-      researcherName: 'Ananya Rao',
-      status: 'UNDER_REVIEW',
-      submittedDate: '2026-07-29T14:15:00',
-      assignedReviewers: 2
-    },
-    {
-      reviewId: 103,
-      paperId: 23,
-      title: 'Blockchain-Based Academic Credential Verification',
-      researcherName: 'Kiran Kumar',
-      status: 'REVIEW_COMPLETED',
-      submittedDate: '2026-07-27T11:00:00',
-      assignedReviewers: 2
-    },
-    {
-      reviewId: 104,
-      paperId: 24,
-      title: 'Machine Learning for Crop Disease Detection',
-      researcherName: 'Priya Nair',
-      status: 'REVISION_REQUESTED',
-      submittedDate: '2026-07-25T10:20:00',
-      assignedReviewers: 1
+export class EditorDashboardComponent implements OnInit {
+  private readonly editorService = inject(EditorService);
+  private readonly tokenStorage = inject(TokenStorageService);
+
+  readonly loading = signal(true);
+  readonly errorMessage = signal('');
+
+  readonly pendingReviews = signal<ReviewProcessResponse[]>([]);
+  readonly assignedReviews = signal<ReviewProcessResponse[]>([]);
+
+  /**
+   * Combines pending and assigned reviews while preventing duplicate
+   * review IDs from being displayed.
+   */
+  readonly allReviews = computed(() => {
+    const reviewMap = new Map<number, ReviewProcessResponse>();
+
+    for (const review of this.pendingReviews()) {
+      reviewMap.set(review.reviewId, review);
     }
-  ]);
 
-  readonly totalSubmissions = computed(
-    () => this.queueItems().length
-  );
+    for (const review of this.assignedReviews()) {
+      reviewMap.set(review.reviewId, review);
+    }
 
-  readonly unassignedCount = computed(
-    () =>
-      this.queueItems().filter(
-        item => item.assignedReviewers === 0
+    return Array.from(reviewMap.values());
+  });
+
+  readonly stats = computed(() => {
+    const reviews = this.allReviews();
+
+    return {
+      total: reviews.length,
+
+      pendingAssignment: reviews.filter(
+        (review) => !review.reviewerId
+      ).length,
+
+      underReview: reviews.filter(
+        (review) =>
+          review.reviewerId !== null &&
+          review.reviewerRecommendation === null &&
+          !this.hasFinalDecision(review)
+      ).length,
+
+      awaitingDecision: reviews.filter(
+        (review) =>
+          review.reviewerRecommendation !== null &&
+          !this.hasFinalDecision(review)
+      ).length,
+
+      accepted: reviews.filter(
+        (review) =>
+          this.normaliseValue(review.editorDecision) === 'ACCEPT'
+      ).length,
+
+      rejected: reviews.filter(
+        (review) =>
+          this.normaliseValue(review.editorDecision) === 'REJECT'
       ).length
-  );
+    };
+  });
 
-  readonly underReviewCount = computed(
-    () =>
-      this.queueItems().filter(
-        item => item.status === 'UNDER_REVIEW'
-      ).length
-  );
+  /**
+   * Puts papers requiring immediate editor action first.
+   */
+  readonly attentionReviews = computed(() => {
+    return [...this.allReviews()]
+      .sort((first, second) => {
+        return (
+          this.getPriority(first) -
+          this.getPriority(second)
+        );
+      })
+      .slice(0, 6);
+  });
 
-  readonly awaitingDecisionCount = computed(
-    () =>
-      this.queueItems().filter(
-        item => item.status === 'REVIEW_COMPLETED'
-      ).length
-  );
+  ngOnInit(): void {
+    this.loadDashboard();
+  }
 
-  readonly recentItems = computed(() =>
-    [...this.queueItems()]
-      .sort(
-        (a, b) =>
-          new Date(b.submittedDate).getTime() -
-          new Date(a.submittedDate).getTime()
-      )
-      .slice(0, 5)
-  );
+  loadDashboard(): void {
+    const user = this.tokenStorage.getUser();
 
-  formatStatus(status: string): string {
-    return status
+    if (!user) {
+      this.errorMessage.set(
+        'Unable to identify the logged-in editor.'
+      );
+      this.loading.set(false);
+      return;
+    }
+
+    this.loading.set(true);
+    this.errorMessage.set('');
+
+    forkJoin({
+      pending: this.editorService.getPendingReviews(),
+      assigned: this.editorService.getAssignedReviews(user.id)
+    }).subscribe({
+      next: ({ pending, assigned }) => {
+        this.pendingReviews.set(pending);
+        this.assignedReviews.set(assigned);
+        this.loading.set(false);
+      },
+      error: (error) => {
+        console.error(
+          'Failed to load editor dashboard:',
+          error
+        );
+
+        this.errorMessage.set(
+          'Unable to load editor dashboard data. Please try again.'
+        );
+
+        this.loading.set(false);
+      }
+    });
+  }
+
+  getPaperTitle(review: ReviewProcessResponse): string {
+    const title = review.paperTitle?.trim();
+
+    return title || `Paper #${review.paperId}`;
+  }
+
+  getActionLabel(review: ReviewProcessResponse): string {
+    if (!review.reviewerId) {
+      return 'Assign Reviewer';
+    }
+
+    if (
+      review.reviewerRecommendation &&
+      !this.hasFinalDecision(review)
+    ) {
+      return 'Make Decision';
+    }
+
+    if (this.hasFinalDecision(review)) {
+      return 'View Decision';
+    }
+
+    return 'View Review';
+  }
+
+  getActionIcon(review: ReviewProcessResponse): string {
+    if (!review.reviewerId) {
+      return 'person_add';
+    }
+
+    if (
+      review.reviewerRecommendation &&
+      !this.hasFinalDecision(review)
+    ) {
+      return 'gavel';
+    }
+
+    if (this.hasFinalDecision(review)) {
+      return 'visibility';
+    }
+
+    return 'rate_review';
+  }
+
+  getActionRoute(
+    review: ReviewProcessResponse
+  ): (string | number)[] {
+    if (!review.reviewerId) {
+      return [
+        '/editor/assign-reviewer',
+        review.reviewId
+      ];
+    }
+
+    if (
+      review.reviewerRecommendation &&
+      !this.hasFinalDecision(review)
+    ) {
+      return [
+        '/editor/decisions',
+        review.reviewId
+      ];
+    }
+
+    if (this.hasFinalDecision(review)) {
+      return [
+        '/editor/decisions',
+        review.reviewId
+      ];
+    }
+
+    return ['/editor/papers'];
+  }
+
+  getWorkflowLabel(
+    review: ReviewProcessResponse
+  ): string {
+    if (!review.reviewerId) {
+      return 'Pending Assignment';
+    }
+
+    if (
+      review.reviewerRecommendation &&
+      !this.hasFinalDecision(review)
+    ) {
+      return 'Awaiting Decision';
+    }
+
+    if (
+      this.normaliseValue(review.editorDecision) ===
+      'ACCEPT'
+    ) {
+      return 'Accepted';
+    }
+
+    if (
+      this.normaliseValue(review.editorDecision) ===
+      'REJECT'
+    ) {
+      return 'Rejected';
+    }
+
+    return this.formatValue(review.reviewStatus);
+  }
+
+  getWorkflowClass(
+    review: ReviewProcessResponse
+  ): string {
+    if (!review.reviewerId) {
+      return 'status--pending';
+    }
+
+    if (
+      review.reviewerRecommendation &&
+      !this.hasFinalDecision(review)
+    ) {
+      return 'status--decision';
+    }
+
+    if (
+      this.normaliseValue(review.editorDecision) ===
+      'ACCEPT'
+    ) {
+      return 'status--accepted';
+    }
+
+    if (
+      this.normaliseValue(review.editorDecision) ===
+      'REJECT'
+    ) {
+      return 'status--rejected';
+    }
+
+    return 'status--review';
+  }
+
+  formatValue(
+    value: unknown
+  ): string {
+    if (value === null || value === undefined) {
+      return 'Not available';
+    }
+
+    return String(value)
       .toLowerCase()
       .split('_')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .map(
+        (word) =>
+          word.charAt(0).toUpperCase() +
+          word.slice(1)
+      )
       .join(' ');
   }
 
-  getStatusClass(status: string): string {
-    return `status--${status.toLowerCase().replaceAll('_', '-')}`;
+  private hasFinalDecision(
+    review: ReviewProcessResponse
+  ): boolean {
+    const decision = this.normaliseValue(
+      review.editorDecision
+    );
+
+    return (
+      decision !== '' &&
+      decision !== 'PENDING'
+    );
   }
 
-  formatDate(date: string): string {
-    return new Date(date).toLocaleDateString('en-IN', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
-    });
+  private normaliseValue(value: unknown): string {
+    if (value === null || value === undefined) {
+      return '';
+    }
+
+    return String(value).trim().toUpperCase();
+  }
+
+  private getPriority(
+    review: ReviewProcessResponse
+  ): number {
+    if (!review.reviewerId) {
+      return 1;
+    }
+
+    if (
+      review.reviewerRecommendation &&
+      !this.hasFinalDecision(review)
+    ) {
+      return 2;
+    }
+
+    if (!this.hasFinalDecision(review)) {
+      return 3;
+    }
+
+    return 4;
   }
 }

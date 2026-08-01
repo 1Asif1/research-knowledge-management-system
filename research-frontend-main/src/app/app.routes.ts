@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { RESEARCHER_ROUTES } from '@pages/researcher/researcher.routes';
 import { REVIEWER_ROUTES } from '@pages/reviewer/reviewer.routes';
+import { EDITOR_ROUTES } from '@pages/editor/editor.routes';
 import { MainLayoutComponent } from '@layouts/main-layout/main-layout.component';
 import { AuthLayoutComponent } from '@layouts/auth-layout/auth-layout.component';
 import { authGuard } from '@core/guards/auth.guard';
@@ -67,37 +68,21 @@ export const routes: Routes = [
       {
         path: 'editor',
         canActivate: [roleGuard],
-        data: { roles: [Role.EDITOR], breadcrumb: 'Editor' },
+        data: {
+          roles: [Role.EDITOR],
+          breadcrumb: 'Editor'
+        },
         children: [
-          { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
-          {
-            path: 'dashboard',
-            loadComponent: () =>
-              import('@pages/role-dashboard/role-dashboard.component').then((m) => m.RoleDashboardComponent)
-          },
-          {
-            path: 'papers',
-            loadComponent: () => import('@pages/papers/papers-page.component').then((m) => m.PapersPageComponent)
-          },
-          {
-            path: 'reviews',
-            loadComponent: () => import('@pages/reviews/reviews-page.component').then((m) => m.ReviewsPageComponent)
-          },
-          {
-            path: 'reports',
-            loadComponent: () => import('@pages/reports/reports-page.component').then((m) => m.ReportsPageComponent)
-          },
+          ...EDITOR_ROUTES,
           {
             path: 'notifications',
             loadComponent: () =>
-              import('./features/notifications/notifications.component')
-                .then(m => m.NotificationsComponent)
-          },
-          {
-            path: 'profile',
-            loadComponent: () =>
-              import('@shared/components/profile/profile.component')
-                .then(m => m.ProfileComponent)
+              import('./features/notifications/notifications.component').then(
+                (m) => m.NotificationsComponent
+              ),
+            data: {
+              breadcrumb: 'Notifications'
+            }
           }
         ]
       },

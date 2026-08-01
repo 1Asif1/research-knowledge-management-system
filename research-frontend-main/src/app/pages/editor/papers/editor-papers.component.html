@@ -1,0 +1,329 @@
+<div class="editor-papers">
+  <header class="page-header">
+    <div>
+      <h1>Papers</h1>
+
+      <p class="text-secondary">
+        Manage submitted papers throughout the editorial
+        workflow.
+      </p>
+    </div>
+
+    <button
+      mat-stroked-button
+      type="button"
+      (click)="loadPapers()"
+      [disabled]="loading()"
+    >
+      <mat-icon>refresh</mat-icon>
+
+      {{ loading() ? 'Refreshing...' : 'Refresh' }}
+    </button>
+  </header>
+
+  <section
+    class="workflow-stats"
+    *ngIf="!loading() && !errorMessage()"
+  >
+    <button
+      type="button"
+      class="workflow-card card-surface"
+      [class.workflow-card--active]="
+        selectedFilter() === 'ALL'
+      "
+      (click)="updateFilter('ALL')"
+    >
+      <mat-icon>folder</mat-icon>
+
+      <span>All Papers</span>
+
+      <strong>{{ counts().all }}</strong>
+    </button>
+
+    <button
+      type="button"
+      class="workflow-card card-surface"
+      [class.workflow-card--active]="
+        selectedFilter() === 'PENDING_ASSIGNMENT'
+      "
+      (click)="updateFilter('PENDING_ASSIGNMENT')"
+    >
+      <mat-icon>person_add</mat-icon>
+
+      <span>Pending Assignment</span>
+
+      <strong>{{ counts().pendingAssignment }}</strong>
+    </button>
+
+    <button
+      type="button"
+      class="workflow-card card-surface"
+      [class.workflow-card--active]="
+        selectedFilter() === 'UNDER_REVIEW'
+      "
+      (click)="updateFilter('UNDER_REVIEW')"
+    >
+      <mat-icon>rate_review</mat-icon>
+
+      <span>Under Review</span>
+
+      <strong>{{ counts().underReview }}</strong>
+    </button>
+
+    <button
+      type="button"
+      class="workflow-card card-surface"
+      [class.workflow-card--active]="
+        selectedFilter() === 'AWAITING_DECISION'
+      "
+      (click)="updateFilter('AWAITING_DECISION')"
+    >
+      <mat-icon>gavel</mat-icon>
+
+      <span>Awaiting Decision</span>
+
+      <strong>{{ counts().awaitingDecision }}</strong>
+    </button>
+
+    <button
+      type="button"
+      class="workflow-card card-surface"
+      [class.workflow-card--active]="
+        selectedFilter() === 'ACCEPTED'
+      "
+      (click)="updateFilter('ACCEPTED')"
+    >
+      <mat-icon>verified</mat-icon>
+
+      <span>Accepted</span>
+
+      <strong>{{ counts().accepted }}</strong>
+    </button>
+
+    <button
+      type="button"
+      class="workflow-card card-surface"
+      [class.workflow-card--active]="
+        selectedFilter() === 'REJECTED'
+      "
+      (click)="updateFilter('REJECTED')"
+    >
+      <mat-icon>cancel</mat-icon>
+
+      <span>Rejected</span>
+
+      <strong>{{ counts().rejected }}</strong>
+    </button>
+  </section>
+
+  <section class="papers-toolbar card-surface">
+    <mat-form-field appearance="outline">
+      <mat-label>Search papers</mat-label>
+
+      <mat-icon matPrefix>search</mat-icon>
+
+      <input
+        matInput
+        type="search"
+        [ngModel]="searchTerm()"
+        (ngModelChange)="updateSearch($event)"
+        placeholder="Search by title, paper ID, review ID or status"
+      />
+
+      <button
+        *ngIf="searchTerm()"
+        mat-icon-button
+        matSuffix
+        type="button"
+        aria-label="Clear search"
+        (click)="updateSearch('')"
+      >
+        <mat-icon>close</mat-icon>
+      </button>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Workflow status</mat-label>
+
+      <mat-select
+        [ngModel]="selectedFilter()"
+        (ngModelChange)="updateFilter($event)"
+      >
+        <mat-option value="ALL">
+          All Papers
+        </mat-option>
+
+        <mat-option value="PENDING_ASSIGNMENT">
+          Pending Assignment
+        </mat-option>
+
+        <mat-option value="UNDER_REVIEW">
+          Under Review
+        </mat-option>
+
+        <mat-option value="AWAITING_DECISION">
+          Awaiting Decision
+        </mat-option>
+
+        <mat-option value="ACCEPTED">
+          Accepted
+        </mat-option>
+
+        <mat-option value="REJECTED">
+          Rejected
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <button
+      mat-button
+      type="button"
+      (click)="clearFilters()"
+      [disabled]="
+        !searchTerm() &&
+        selectedFilter() === 'ALL'
+      "
+    >
+      <mat-icon>filter_alt_off</mat-icon>
+      Clear Filters
+    </button>
+  </section>
+
+  <app-loading-spinner
+    *ngIf="loading()"
+    message="Loading editor papers..."
+  ></app-loading-spinner>
+
+  <section
+    *ngIf="!loading() && errorMessage()"
+    class="error-card card-surface"
+  >
+    <mat-icon>error_outline</mat-icon>
+
+    <div>
+      <h2>Could not load papers</h2>
+
+      <p>{{ errorMessage() }}</p>
+
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        (click)="loadPapers()"
+      >
+        Try Again
+      </button>
+    </div>
+  </section>
+
+  <section
+    *ngIf="!loading() && !errorMessage()"
+    class="papers-table card-surface"
+  >
+    <div class="papers-table__header">
+      <span>Paper</span>
+      <span>Workflow</span>
+      <span>Reviewer</span>
+      <span>Recommendation</span>
+      <span>Editor Decision</span>
+      <span>Action</span>
+    </div>
+
+    <article
+      *ngFor="let review of filteredReviews()"
+      class="papers-table__row"
+    >
+      <div class="paper-cell">
+        <div class="paper-cell__icon">
+          <mat-icon>article</mat-icon>
+        </div>
+
+        <div>
+          <strong>
+            {{ getPaperTitle(review) }}
+          </strong>
+
+          <span>
+            Paper #{{ review.paperId }}
+            · Review #{{ review.reviewId }}
+            · Version {{ review.currentVersion }}
+          </span>
+        </div>
+      </div>
+
+      <span
+        class="status-badge"
+        [ngClass]="getWorkflowClass(review)"
+      >
+        {{ getWorkflowLabel(review) }}
+      </span>
+
+      <span>
+        {{
+          review.reviewerId
+            ? 'Reviewer #' + review.reviewerId
+            : 'Not assigned'
+        }}
+      </span>
+
+      <span>
+        {{
+          review.reviewerRecommendation
+            ? formatValue(
+                review.reviewerRecommendation
+              )
+            : 'Pending'
+        }}
+      </span>
+
+      <span>
+        {{
+          review.editorDecision
+            ? formatValue(review.editorDecision)
+            : 'Pending'
+        }}
+      </span>
+
+      <a
+        mat-stroked-button
+        [routerLink]="getActionRoute(review)"
+      >
+        <mat-icon>
+          {{ getActionIcon(review) }}
+        </mat-icon>
+
+        {{ getActionLabel(review) }}
+      </a>
+    </article>
+
+    <div
+      *ngIf="filteredReviews().length === 0"
+      class="empty-state"
+    >
+      <mat-icon>folder_off</mat-icon>
+
+      <h2>No papers found</h2>
+
+      <p>
+        {{
+        searchTerm() ||
+        selectedFilter() !== 'ALL'
+        ? 'No papers match the current search or filter.'
+        : 'There are currently no papers in the editorial workflow.'
+        }}
+      </p>
+
+      <button
+        *ngIf="
+          searchTerm() ||
+          selectedFilter() !== 'ALL'
+        "
+        mat-stroked-button
+        type="button"
+        (click)="clearFilters()"
+      >
+        Clear Filters
+      </button>
+    </div>
+  </section>
+</div>

@@ -1,0 +1,290 @@
+<div class="assign-page">
+  <header class="page-header">
+    <div>
+      <button
+        mat-button
+        type="button"
+        class="back-button"
+        (click)="goBack()"
+      >
+        <mat-icon>arrow_back</mat-icon>
+        Back to Papers
+      </button>
+
+      <h1>Assign Reviewer</h1>
+
+      <p class="text-secondary">
+        Select an available reviewer for this paper.
+      </p>
+    </div>
+  </header>
+
+  <app-loading-spinner
+    *ngIf="loading()"
+    message="Loading paper and reviewers..."
+  ></app-loading-spinner>
+
+  <section
+    *ngIf="!loading() && errorMessage()"
+    class="error-card card-surface"
+  >
+    <mat-icon>error_outline</mat-icon>
+
+    <div>
+      <h2>Unable to continue</h2>
+
+      <p>{{ errorMessage() }}</p>
+
+      <button
+        mat-stroked-button
+        type="button"
+        (click)="goBack()"
+      >
+        Return to Papers
+      </button>
+    </div>
+  </section>
+
+  <ng-container
+    *ngIf="
+      !loading() &&
+      !errorMessage() &&
+      selectedReview()
+    "
+  >
+    <section class="paper-summary card-surface">
+      <div class="paper-summary__icon">
+        <mat-icon>article</mat-icon>
+      </div>
+
+      <div class="paper-summary__content">
+        <span class="paper-summary__label">
+          Selected Paper
+        </span>
+
+        <h2>{{ getPaperTitle() }}</h2>
+
+        <div class="paper-summary__meta">
+          <span>
+            Paper #{{ selectedReview()?.paperId }}
+          </span>
+
+          <span>
+            Review #{{ selectedReview()?.reviewId }}
+          </span>
+
+          <span>
+            Version {{ selectedReview()?.currentVersion }}
+          </span>
+        </div>
+      </div>
+
+      <span class="status-badge">
+        Pending Assignment
+      </span>
+    </section>
+
+    <div class="assignment-layout">
+      <main class="reviewer-section card-surface">
+        <div class="section-header">
+          <div>
+            <h2>Available Reviewers</h2>
+
+            <p>
+              Select one reviewer to handle this paper.
+            </p>
+          </div>
+
+          <span class="reviewer-count">
+            {{ filteredReviewers().length }}
+            reviewer{{
+              filteredReviewers().length === 1 ? '' : 's'
+            }}
+          </span>
+        </div>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Search reviewers</mat-label>
+
+          <mat-icon matPrefix>search</mat-icon>
+
+          <input
+            matInput
+            type="search"
+            [value]="searchTerm()"
+            (input)="
+              updateSearch(
+                $any($event.target).value
+              )
+            "
+            placeholder="Search by name or reviewer ID"
+          />
+
+          <button
+            *ngIf="searchTerm()"
+            mat-icon-button
+            matSuffix
+            type="button"
+            aria-label="Clear search"
+            (click)="updateSearch('')"
+          >
+            <mat-icon>close</mat-icon>
+          </button>
+        </mat-form-field>
+
+        <form [formGroup]="assignmentForm">
+          <mat-radio-group
+            formControlName="reviewerId"
+            class="reviewer-list"
+            (change)="selectReviewer($event.value)"
+          >
+            <label
+              *ngFor="let reviewer of filteredReviewers()"
+              class="reviewer-card"
+              [class.reviewer-card--selected]="
+                assignmentForm.controls.reviewerId.value ===
+                reviewer.id
+              "
+              (click)="selectReviewer(reviewer.id)"
+            >
+              <mat-radio-button
+                [value]="reviewer.id"
+              ></mat-radio-button>
+
+              <div class="reviewer-card__avatar">
+                {{ getInitials(reviewer) }}
+              </div>
+
+              <div class="reviewer-card__details">
+                <strong>
+                  {{ getReviewerName(reviewer) }}
+                </strong>
+
+                <span>
+                  Reviewer ID: #{{ reviewer.id }}
+                </span>
+              </div>
+
+              <mat-icon
+                *ngIf="
+                  assignmentForm.controls.reviewerId.value ===
+                  reviewer.id
+                "
+                class="selected-icon"
+              >
+                check_circle
+              </mat-icon>
+            </label>
+          </mat-radio-group>
+
+          <p
+            class="form-error"
+            *ngIf="
+              assignmentForm.controls.reviewerId.invalid &&
+              assignmentForm.controls.reviewerId.touched
+            "
+          >
+            Select a reviewer before continuing.
+          </p>
+        </form>
+
+        <div
+          *ngIf="filteredReviewers().length === 0"
+          class="empty-state"
+        >
+          <mat-icon>person_search</mat-icon>
+
+          <h3>No reviewers found</h3>
+
+          <p *ngIf="searchTerm()">
+            No available reviewer matches your search.
+          </p>
+
+          <p *ngIf="!searchTerm()">
+            The backend did not return any available reviewers.
+          </p>
+
+          <button
+            *ngIf="searchTerm()"
+            mat-stroked-button
+            type="button"
+            (click)="updateSearch('')"
+          >
+            Clear Search
+          </button>
+        </div>
+      </main>
+
+      <aside class="assignment-summary card-surface">
+        <h2>Assignment Summary</h2>
+
+        <div class="summary-row">
+          <span>Paper</span>
+
+          <strong>
+            {{ getPaperTitle() }}
+          </strong>
+        </div>
+
+        <div class="summary-row">
+          <span>Current Version</span>
+
+          <strong>
+            {{ selectedReview()?.currentVersion }}
+          </strong>
+        </div>
+
+        <div class="summary-row">
+          <span>Selected Reviewer</span>
+
+          <strong>
+            {{
+            selectedReviewer()
+            ? getReviewerName(selectedReviewer()!)
+            : 'Not selected'
+            }}
+          </strong>
+        </div>
+
+        <div class="summary-row">
+          <span>Editor ID</span>
+
+          <strong>
+            {{
+            selectedReview()?.editorId
+            ? '#' + selectedReview()?.editorId
+            : 'Current user'
+            }}
+          </strong>
+        </div>
+
+        <button
+          mat-flat-button
+          color="primary"
+          type="button"
+          class="assign-button"
+          (click)="assignReviewer()"
+          [disabled]="
+            assigning() ||
+            assignmentForm.invalid
+          "
+        >
+          <mat-icon>person_add</mat-icon>
+
+          {{
+          assigning()
+          ? 'Assigning Reviewer...'
+          : 'Confirm Assignment'
+          }}
+        </button>
+
+        <p class="assignment-note">
+          <mat-icon>info</mat-icon>
+
+          The selected reviewer will receive this paper in
+          their Assigned Papers queue.
+        </p>
+      </aside>
+    </div>
+  </ng-container>
+</div>

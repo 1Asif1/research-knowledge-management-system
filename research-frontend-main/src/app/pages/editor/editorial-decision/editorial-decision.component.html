@@ -1,0 +1,191 @@
+<div class="decision-page">
+  <button
+    mat-button
+    type="button"
+    class="back-button"
+    (click)="goBack()"
+  >
+    <mat-icon>arrow_back</mat-icon>
+    Editorial Decisions
+  </button>
+
+  <app-loading-spinner
+    *ngIf="loading()"
+    message="Loading review details..."
+  ></app-loading-spinner>
+
+  <section
+    *ngIf="!loading() && errorMessage()"
+    class="error-card card-surface"
+  >
+    <mat-icon>error_outline</mat-icon>
+
+    <div>
+      <h2>Could not load review</h2>
+      <p>{{ errorMessage() }}</p>
+    </div>
+  </section>
+
+  <ng-container
+    *ngIf="!loading() && !errorMessage() && review()"
+  >
+    <header class="paper-header card-surface">
+      <div>
+        <span class="label">Editorial Decision</span>
+
+        <h1>{{ getPaperTitle() }}</h1>
+
+        <p>
+          Paper #{{ review()?.paperId }}
+          · Review #{{ review()?.reviewId }}
+          · Version {{ review()?.currentVersion }}
+        </p>
+      </div>
+
+      <span
+        class="status-badge"
+        [class.status-badge--completed]="isCompleted()"
+      >
+        {{
+          isCompleted()
+            ? formatValue(review()?.editorDecision)
+            : 'Awaiting Decision'
+        }}
+      </span>
+    </header>
+
+    <div class="decision-layout">
+      <main class="review-summary card-surface">
+        <h2>Review Summary</h2>
+
+        <div class="summary-grid">
+          <div>
+            <span>Reviewer</span>
+            <strong>
+              Reviewer #{{ review()?.reviewerId }}
+            </strong>
+          </div>
+
+          <div>
+            <span>Review Status</span>
+            <strong>
+              {{ formatValue(review()?.reviewStatus) }}
+            </strong>
+          </div>
+
+          <div>
+            <span>Reviewer Recommendation</span>
+            <strong class="recommendation">
+              {{
+              formatValue(
+              review()?.reviewerRecommendation
+              )
+              }}
+            </strong>
+          </div>
+
+          <div>
+            <span>Current Version</span>
+            <strong>
+              Version {{ review()?.currentVersion }}
+            </strong>
+          </div>
+        </div>
+
+        <div class="recommendation-note">
+          <mat-icon>info</mat-icon>
+
+          <p>
+            The reviewer recommendation is advisory. The editor
+            is responsible for the final decision.
+          </p>
+        </div>
+      </main>
+
+      <aside class="decision-card card-surface">
+        <h2>Final Decision</h2>
+
+        <p>
+          Select the final editorial decision for this paper.
+        </p>
+
+        <form
+          [formGroup]="decisionForm"
+          (ngSubmit)="submitDecision()"
+        >
+          <mat-radio-group
+            formControlName="decision"
+            class="decision-options"
+          >
+            <label class="decision-option decision-option--accept">
+              <mat-radio-button value="ACCEPT">
+              </mat-radio-button>
+
+              <mat-icon>verified</mat-icon>
+
+              <div>
+                <strong>Accept Paper</strong>
+
+                <span>
+                  Approve the paper for publication.
+                </span>
+              </div>
+            </label>
+
+            <label class="decision-option decision-option--reject">
+              <mat-radio-button value="REJECT">
+              </mat-radio-button>
+
+              <mat-icon>cancel</mat-icon>
+
+              <div>
+                <strong>Reject Paper</strong>
+
+                <span>
+                  Reject the paper from the review process.
+                </span>
+              </div>
+            </label>
+          </mat-radio-group>
+
+          <p
+            class="form-error"
+            *ngIf="
+              decisionForm.controls.decision.invalid &&
+              decisionForm.controls.decision.touched
+            "
+          >
+            Select an editorial decision.
+          </p>
+
+          <button
+            mat-flat-button
+            color="primary"
+            type="submit"
+            class="submit-button"
+            [disabled]="
+              submitting() ||
+              decisionForm.invalid ||
+              isCompleted()
+            "
+          >
+            <mat-icon>gavel</mat-icon>
+
+            {{
+            submitting()
+            ? 'Submitting Decision...'
+            : isCompleted()
+            ? 'Decision Submitted'
+            : 'Submit Final Decision'
+            }}
+          </button>
+        </form>
+
+        <p class="warning">
+          <mat-icon>warning_amber</mat-icon>
+          A final decision cannot be changed from this page.
+        </p>
+      </aside>
+    </div>
+  </ng-container>
+</div>
