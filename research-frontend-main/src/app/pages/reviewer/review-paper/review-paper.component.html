@@ -46,7 +46,7 @@
   </section>
 
   <ng-container
-    *ngIf="!loading() && !errorMessage() && review() && paper()"
+    *ngIf="!loading() && !errorMessage() && review()"
   >
     <section class="paper-header card-surface">
       <div class="paper-header__main">
@@ -65,11 +65,13 @@
             </span>
           </div>
 
-          <h2>{{ paper()?.title }}</h2>
+          <h2>
+            {{ paper()?.title || review()?.paperTitle || ('Paper #' + review()?.paperId) }}
+          </h2>
 
           <p>
             Review #{{ review()?.reviewId }}
-            · {{ paper()?.title || ('Paper #' + paper()?.id) }}
+            · {{ review()?.paperTitle || paper()?.title || ('Paper #' + review()?.paperId) }}
           </p>
         </div>
       </div>
@@ -93,6 +95,13 @@
               <p>Information provided by the researcher.</p>
             </div>
           </div>
+
+          <p
+            *ngIf="paperMetadataError()"
+            class="text-secondary"
+          >
+            {{ paperMetadataError() }}
+          </p>
 
           <div class="paper-details__grid">
             <div class="detail-item">
@@ -290,7 +299,7 @@
               type="submit"
               [disabled]="
                 submittingComment() ||
-                !review()?.currentVersionId
+                !review()?.currentVersion
               "
             >
               <mat-icon>add_comment</mat-icon>

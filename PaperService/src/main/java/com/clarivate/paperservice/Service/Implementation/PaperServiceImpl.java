@@ -62,7 +62,7 @@ public class PaperServiceImpl implements PaperService {
 
     @Override
     public PaperResponse getPaperById(Long id) {
-        return paperRepository.findById(id)
+        return findPaperForReviewerOrThrow(id)
                 .map(this::toPaperResponse)
                 .orElseThrow(() -> new ResourceNotFoundException("Paper not found"));
     }
@@ -242,8 +242,10 @@ public class PaperServiceImpl implements PaperService {
     @Override
     @Transactional(readOnly = true)
     public PaperDownloadResponse downloadCurrentPaperVersion(Long paperId) {
-        Paper paper = findPaperOrThrow(paperId);
-        PaperVersion latestVersion = paperVersionRepository.findTopByPaperIdOrderByVersionDesc(paperId);
+        Paper paper = findPaperForReviewerOrThrow(paperId)
+                .orElseThrow(() -> new ResourceNotFoundException("Paper not found"));
+        Long localPaperId = paper.getId();
+        PaperVersion latestVersion = paperVersionRepository.findTopByPaperIdOrderByVersionDesc(localPaperId);
         List<String> references = new ArrayList<>();
         if (latestVersion != null) {
             references.add(latestVersion.getFileName());
@@ -415,6 +417,11 @@ public class PaperServiceImpl implements PaperService {
 
     private Paper findPaperOrThrow(Long paperId) {
         return paperRepository.findById(paperId).orElseThrow(this::notFound);
+    }
+
+    private java.util.Optional<Paper> findPaperForReviewerOrThrow(Long paperId) {
+        return paperRepository.findById(paperId)
+                .or(() -> paperRepository.findByReviewPaperId(paperId));
     }
 
     private String buildUploadPath(String storedFileName) {

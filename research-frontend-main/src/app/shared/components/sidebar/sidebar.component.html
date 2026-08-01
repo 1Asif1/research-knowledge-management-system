@@ -6,8 +6,25 @@
       [routerLink]="item.route"
       routerLinkActive="active"
       [routerLinkActiveOptions]="item.exact ? exactMatchOptions : subsetMatchOptions"
+      [attr.aria-label]="item.label"
+      [attr.title]="item.label"
     >
+      <span class="material-icons sidebar__icon" aria-hidden="true">{{ item.icon }}</span>
       <span *ngIf="!collapsed()">{{ item.label }}</span>
     </a>
   </nav>
+  <div class="sidebar__footer">
+    <button
+      type="button"
+      class="sidebar__toggle"
+      [attr.aria-label]="collapsed() ? 'Expand sidebar' : 'Collapse sidebar'"
+      [attr.aria-pressed]="collapsed()"
+      (click)="sidebarToggle.emit()"
+    >
+      <span class="material-icons" aria-hidden="true">
+        {{ collapsed() ? 'chevron_right' : 'chevron_left' }}
+      </span>
+      <span *ngIf="!collapsed()"></span>
+    </button>
+  </div>
 </aside>

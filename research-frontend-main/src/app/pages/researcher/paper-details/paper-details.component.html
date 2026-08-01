@@ -70,12 +70,7 @@
 
       <mat-tab label="Review Timeline">
         <div class="paper-details__tab-content">
-          <app-timeline
-            [steps]="[
-              { label: 'Paper Submitted', timestamp: p.submittedDate, state: 'completed', icon: 'upload_file' },
-              { label: 'Awaiting Reviewer Assignment', state: 'current', icon: 'hourglass_empty' }
-            ]"
-          ></app-timeline>
+          <app-timeline [steps]="timelineSteps()"></app-timeline>
         </div>
       </mat-tab>
     </mat-tab-group>

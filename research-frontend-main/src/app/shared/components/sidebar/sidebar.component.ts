@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { TokenStorageService } from '@core/services/token-storage.service';
@@ -16,6 +16,7 @@ export class SidebarComponent {
   private readonly tokenStorage = inject(TokenStorageService);
 
   collapsed = input(false);
+  readonly sidebarToggle = output<void>();
 
   readonly exactMatchOptions = { exact: true };
   readonly subsetMatchOptions = { exact: false };

@@ -1,5 +1,6 @@
 package com.clarivate.reviewservice.Service.Impl;
 
+import com.clarivate.reviewservice.Client.PaperServiceClient;
 import com.clarivate.reviewservice.Entity.PaperVersion;
 import com.clarivate.reviewservice.Entity.PaperSubmission;
 import com.clarivate.reviewservice.Entity.ReviewComment;
@@ -51,6 +52,7 @@ public class ReviewerServiceImpl implements ReviewerService {
     private final PaperVersionRepository paperVersionRepository;
     private final PaperSubmissionRepository paperSubmissionRepository;
     private final ReviewerAssignmentRepository reviewerAssignmentRepository;
+    private final PaperServiceClient paperServiceClient;
     private final RestTemplate restTemplate = new RestTemplate();
     @Value("${notification-service.url:http://localhost:8084}")
     private String notificationServiceUrl;
@@ -128,19 +130,14 @@ public class ReviewerServiceImpl implements ReviewerService {
         reviewProcess.setReviewRecommendation(
                 request.getRecommendation().toString()
         );
-
-        /*
-         * Keep the review process under review until the editor
-         * makes the final editorial decision.
-         */
-        reviewProcess.setReviewStatus(
-                ReviewStatus.UNDER_REVIEW.toString()
-        );
+        ReviewStatus reviewStatus = mapReviewStatus(request.getRecommendation());
+        reviewProcess.setReviewStatus(reviewStatus.toString());
 
         reviewProcess.setLastUpdated(LocalDateTime.now());
 
         ReviewProcess updatedReview =
                 reviewProcessRepository.save(reviewProcess);
+        syncPaperStatus(reviewProcess.getPaperId(), mapPaperStatus(request.getRecommendation()));
 
         ReviewHistory history = ReviewHistory.builder()
                 .reviewProcess(reviewProcess)
@@ -258,6 +255,26 @@ public class ReviewerServiceImpl implements ReviewerService {
                                         + reviewProcess.getPaperId()
                                         + " at version "
                                         + reviewProcess.getCurrentVersion()));
+    }
+
+    private ReviewStatus mapReviewStatus(ReviewerRecommendation recommendation) {
+        return switch (recommendation) {
+            case ACCEPT -> ReviewStatus.APPROVED;
+            case MINOR_REVISION, MAJOR_REVISION -> ReviewStatus.CORRECTION_REQUESTED;
+            case REJECT -> ReviewStatus.REJECTED;
+        };
+    }
+
+    private String mapPaperStatus(ReviewerRecommendation recommendation) {
+        return switch (recommendation) {
+            case ACCEPT -> "APPROVED";
+            case MINOR_REVISION, MAJOR_REVISION -> "REVISIONS_REQUIRED";
+            case REJECT -> "REJECTED";
+        };
+    }
+
+    private void syncPaperStatus(Long paperId, String status) {
+        paperServiceClient.updateStatus(paperId, status);
     }
 
     private ReviewStatus parseReviewStatus(String status) {

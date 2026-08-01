@@ -1,5 +1,6 @@
 package com.clarivate.reviewservice.Service.Impl;
 
+import com.clarivate.reviewservice.Client.PaperServiceClient;
 import com.clarivate.reviewservice.Entity.ReviewProcess;
 import com.clarivate.reviewservice.Entity.ReviewerAssignment;
 import com.clarivate.reviewservice.Entity.ReviewHistory;
@@ -39,6 +40,7 @@ public class EditorServiceImpl implements EditorService {
     private final ReviewerAssignmentRepository reviewerAssignmentRepository;
     private final ReviewHistoryRepository reviewHistoryRepository;
     private final PaperSubmissionRepository paperSubmissionRepository;
+    private final PaperServiceClient paperServiceClient;
     private final RestTemplate restTemplate = new RestTemplate();
     @Value("${user-service.url:http://localhost:8081}")
     private String userServiceUrl;
@@ -88,6 +90,7 @@ public class EditorServiceImpl implements EditorService {
         }
         reviewProcess.setLastUpdated(LocalDateTime.now());
         ReviewProcess updatedReview = reviewProcessRepository.save(reviewProcess);
+        syncPaperStatus(reviewProcess.getPaperId(), mapPaperStatus(request.getDecision()));
 
         ReviewHistory history = ReviewHistory.builder()
                 .reviewProcess(reviewProcess)
@@ -174,5 +177,16 @@ public class EditorServiceImpl implements EditorService {
         public String firstName;
         public String lastName;
         public String role;
+    }
+
+    private String mapPaperStatus(EditorDecision decision) {
+        return switch (decision) {
+            case ACCEPT -> "APPROVED";
+            case REJECT -> "REJECTED";
+        };
+    }
+
+    private void syncPaperStatus(Long paperId, String status) {
+        paperServiceClient.updateStatus(paperId, status);
     }
 }

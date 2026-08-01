@@ -83,6 +83,7 @@ export class ReviewPaperComponent implements OnInit, OnDestroy {
 
   readonly errorMessage = signal('');
   readonly contentError = signal('');
+  readonly paperMetadataError = signal('');
 
   readonly review = signal<ReviewProcessResponse | null>(null);
   readonly paper = signal<PaperResponse | null>(null);
@@ -169,6 +170,9 @@ export class ReviewPaperComponent implements OnInit, OnDestroy {
 
     this.loading.set(true);
     this.errorMessage.set('');
+    this.paper.set(null);
+    this.comments.set([]);
+    this.paperMetadataError.set('');
 
     this.reviewerService.getAssignedReviews(user.id).subscribe({
       next: (reviews) => {
@@ -185,6 +189,7 @@ export class ReviewPaperComponent implements OnInit, OnDestroy {
         }
 
         this.review.set(selectedReview);
+        this.paperMetadataError.set('');
 
         if (selectedReview.reviewerRecommendation) {
           this.recommendationForm.patchValue({
@@ -192,6 +197,7 @@ export class ReviewPaperComponent implements OnInit, OnDestroy {
           });
         }
 
+        this.loadVersionContent();
         this.loadPaper(selectedReview.paperId);
         this.loadComments(selectedReview.reviewId);
       },
@@ -209,16 +215,13 @@ export class ReviewPaperComponent implements OnInit, OnDestroy {
     this.paperService.getPaperById(paperId).subscribe({
       next: (paper) => {
         this.paper.set(paper);
+        this.paperMetadataError.set('');
         this.loading.set(false);
-
-        if (this.review()?.currentVersion) {
-          this.loadVersionContent();
-        }
       },
       error: (error) => {
         console.error('Failed to load paper:', error);
-        this.errorMessage.set(
-          'The review was found, but the paper details could not be loaded.'
+        this.paperMetadataError.set(
+          'Paper details could not be loaded. Showing the review data instead.'
         );
         this.loading.set(false);
       }
@@ -252,6 +255,8 @@ export class ReviewPaperComponent implements OnInit, OnDestroy {
       return;
     }
 
+    const versionIdentifier = review.currentVersionId ?? review.currentVersion;
+
     this.loadingContent.set(true);
     this.contentError.set('');
     this.versionContent.set('');
@@ -260,7 +265,7 @@ export class ReviewPaperComponent implements OnInit, OnDestroy {
     this.paperService
       .downloadPaperPdfForReviewer(
         review.paperId,
-        review.currentVersion,
+        versionIdentifier,
         true
       )
       .subscribe({
@@ -303,11 +308,13 @@ export class ReviewPaperComponent implements OnInit, OnDestroy {
       return;
     }
 
+    const versionId = review.currentVersionId ?? review.currentVersion;
+
     this.submittingComment.set(true);
 
     this.reviewerService.addComment({
       reviewId: review.reviewId,
-      versionId: review.currentVersionId,
+      versionId,
       reviewerId: user.id,
       comment: this.commentForm.controls.comment.value.trim()
     }).subscribe({

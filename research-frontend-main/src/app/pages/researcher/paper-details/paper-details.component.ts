@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { ActivatedRoute, RouterModule } from '@angular/router';
@@ -31,10 +31,11 @@ import { SnackbarService } from '@shared/services/snackbar.service';
   templateUrl: './paper-details.component.html',
   styleUrl: './paper-details.component.scss'
 })
-export class PaperDetailsComponent implements OnInit {
+export class PaperDetailsComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly researcherService = inject(ResearcherService);
   private readonly snackbar = inject(SnackbarService);
+  private refreshTimerId: number | null = null;
 
   readonly loading = signal(true);
   readonly downloading = signal(false);
@@ -44,21 +45,30 @@ export class PaperDetailsComponent implements OnInit {
   readonly reviewStatusLabel = reviewStatusLabel;
   readonly reviewStatusIntent = reviewStatusIntent;
 
-  readonly timelineSteps: TimelineStep[] = [];
+  readonly timelineSteps = computed<TimelineStep[]>(() => {
+    const paper = this.paper();
+    if (!paper) {
+      return [];
+    }
+
+    return this.buildTimelineSteps(paper);
+  });
 
   paperId!: number;
 
   ngOnInit(): void {
     this.paperId = Number(this.route.snapshot.paramMap.get('paperId'));
+    this.loadPaperDetails();
+    this.refreshTimerId = window.setInterval(() => {
+      this.loadPaperDetails(false);
+    }, 5000);
+  }
 
-    this.researcherService.getSubmission(this.paperId).subscribe({
-      next: (data) => {
-        this.paper.set(data);
-        this.loadComments(data.paperId);
-        this.loading.set(false);
-      },
-      error: () => this.loading.set(false)
-    });
+  ngOnDestroy(): void {
+    if (this.refreshTimerId !== null) {
+      window.clearInterval(this.refreshTimerId);
+      this.refreshTimerId = null;
+    }
   }
 
   private loadComments(paperId: number): void {
@@ -72,6 +82,133 @@ export class PaperDetailsComponent implements OnInit {
         this.commentsUnavailable.set(true);
       }
     });
+  }
+
+  private loadPaperDetails(showSpinner = true): void {
+    if (showSpinner) {
+      this.loading.set(true);
+    }
+
+    this.researcherService.getSubmission(this.paperId).subscribe({
+      next: (data) => {
+        this.paper.set(data);
+        this.loadComments(data.paperId);
+        this.loading.set(false);
+      },
+      error: () => this.loading.set(false)
+    });
+  }
+
+  private buildTimelineSteps(paper: PaperSubmissionResponse): TimelineStep[] {
+    const status = (paper.reviewStatus ?? 'SUBMITTED').toUpperCase();
+    const submittedStep: TimelineStep = {
+      label: 'Paper Submitted',
+      timestamp: paper.submittedDate,
+      state: 'completed',
+      icon: 'upload_file'
+    };
+
+    switch (status) {
+      case 'SYNC_PENDING':
+      case 'SUBMITTED':
+        return [
+          submittedStep,
+          {
+            label: 'Awaiting Reviewer Assignment',
+            state: 'current',
+            icon: 'hourglass_empty'
+          }
+        ];
+      case 'REVIEWER_ASSIGNED':
+        return [
+          submittedStep,
+          {
+            label: 'Reviewer Assigned',
+            state: 'current',
+            icon: 'person_search'
+          }
+        ];
+      case 'UNDER_REVIEW':
+        return [
+          submittedStep,
+          {
+            label: 'Reviewer Assigned',
+            state: 'completed',
+            icon: 'person_search'
+          },
+          {
+            label: 'Under Review',
+            state: 'current',
+            icon: 'rate_review'
+          }
+        ];
+      case 'CORRECTION_REQUESTED':
+        return [
+          submittedStep,
+          {
+            label: 'Reviewer Assigned',
+            state: 'completed',
+            icon: 'person_search'
+          },
+          {
+            label: 'Corrections Requested',
+            state: 'current',
+            icon: 'edit_note'
+          }
+        ];
+      case 'RESUBMITTED':
+        return [
+          submittedStep,
+          {
+            label: 'Reviewer Assigned',
+            state: 'completed',
+            icon: 'person_search'
+          },
+          {
+            label: 'Revision Uploaded',
+            state: 'current',
+            icon: 'upload_file'
+          }
+        ];
+      case 'APPROVED':
+      case 'SENT_TO_PUBLICATION':
+        return [
+          submittedStep,
+          {
+            label: 'Reviewer Assigned',
+            state: 'completed',
+            icon: 'person_search'
+          },
+          {
+            label: 'Approved',
+            state: 'current',
+            icon: 'verified'
+          }
+        ];
+      case 'REJECTED':
+        return [
+          submittedStep,
+          {
+            label: 'Reviewer Assigned',
+            state: 'completed',
+            icon: 'person_search'
+          },
+          {
+            label: 'Rejected',
+            state: 'rejected',
+            icon: 'cancel'
+          }
+        ];
+      default:
+        return [
+          submittedStep,
+          {
+            label: this.reviewStatusLabel(status),
+            state: 'current',
+            icon: 'help_outline'
+          }
+        ];
+    }
   }
 
   downloadCurrentVersion(): void {

@@ -11,11 +11,13 @@ import com.clarivate.reviewservice.dto.Response.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.verify;
 
 @SpringBootTest
 @Transactional
@@ -29,6 +31,9 @@ class ReviewServiceIntegrationTest {
 
     @Autowired
     private ReviewerService reviewerService;
+
+    @MockitoBean
+    private com.clarivate.reviewservice.Client.PaperServiceClient paperServiceClient;
 
     @Autowired
     private PaperSubmissionRepository paperSubmissionRepository;
@@ -133,7 +138,8 @@ class ReviewServiceIntegrationTest {
         ReviewProcessResponse recommendationResponse = reviewerService.submitRecommendations(reviewProcess.getReviewId(), recommendationRequest);
         assertNotNull(recommendationResponse);
         assertEquals(ReviewerRecommendation.MINOR_REVISION, recommendationResponse.getReviewerRecommendation());
-        assertEquals(ReviewStatus.UNDER_REVIEW, recommendationResponse.getReviewStatus());
+        assertEquals(ReviewStatus.CORRECTION_REQUESTED, recommendationResponse.getReviewStatus());
+        verify(paperServiceClient).updateStatus(paperId, "REVISIONS_REQUIRED");
 
         // Step 8: Researcher uploads corrected version
         UploadVersionRequest uploadRequest = UploadVersionRequest.builder()
@@ -166,6 +172,7 @@ class ReviewServiceIntegrationTest {
         assertNotNull(decisionResponse);
         assertEquals(EditorDecision.ACCEPT, decisionResponse.getEditorDecision());
         assertEquals(ReviewStatus.SENT_TO_PUBLICATION, decisionResponse.getReviewStatus());
+        verify(paperServiceClient).updateStatus(paperId, "APPROVED");
 
         // Step 10: Researcher views their submission details
         PaperSubmissionResponse paperDetails = researcherService.getSubmission(paperId);

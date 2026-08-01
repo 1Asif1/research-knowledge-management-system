@@ -1,7 +1,10 @@
 <div class="main-layout">
   <app-navbar></app-navbar>
   <div class="main-layout__body">
-    <app-sidebar [collapsed]="sidebarCollapsed()"></app-sidebar>
+    <app-sidebar
+      [collapsed]="sidebarCollapsed()"
+      (sidebarToggle)="toggleSidebar()"
+    ></app-sidebar>
     <main class="main-layout__content">
       <div class="container-page rkm-page-shell">
         <router-outlet></router-outlet>

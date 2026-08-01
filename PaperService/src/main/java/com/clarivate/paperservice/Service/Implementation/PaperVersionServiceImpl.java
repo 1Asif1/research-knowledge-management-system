@@ -87,19 +87,15 @@ public class PaperVersionServiceImpl implements PaperVersionService {
 
     @Override
     public String getPaperVersionContent(Integer versionNumber, Long paperId) {
-        PaperVersion paperVersion = paperVersionRepository.findByPaperIdAndVersion(paperId, versionNumber);
-        if (paperVersion == null) {
-            throw new ResourceNotFoundException("Paper version not found");
-        }
+        Paper paper = findPaperForReviewerOrThrow(paperId);
+        PaperVersion paperVersion = resolvePaperVersion(paper.getId(), versionNumber);
         return paperVersion.toString();
     }
 
     @Override
     public PaperDownloadResponse downloadPaperVersion(Long paperId, Integer versionNumber) {
-        PaperVersion paperVersion = paperVersionRepository.findByPaperIdAndVersion(paperId, versionNumber);
-        if (paperVersion == null) {
-            throw new ResourceNotFoundException("Paper version not found");
-        }
+        Paper paper = findPaperForReviewerOrThrow(paperId);
+        PaperVersion paperVersion = resolvePaperVersion(paper.getId(), versionNumber);
         List<String> references = new ArrayList<>();
         references.add(paperVersion.getFileName());
         references.add(paperVersion.getFilePath());
@@ -130,10 +126,33 @@ public class PaperVersionServiceImpl implements PaperVersionService {
     }
 
     public List<PaperResponse> findByPaperId(Long paperId) {
-        return paperVersionRepository.findByPaperId(paperId)
+        Paper paper = findPaperForReviewerOrThrow(paperId);
+        return paperVersionRepository.findByPaperId(paper.getId())
                 .stream()
                 .map(paperVersion -> new PaperResponse(paperVersion.getPaper()))
                 .toList();
+    }
+
+    private Paper findPaperForReviewerOrThrow(Long paperId) {
+        return paperRepository.findById(paperId)
+                .or(() -> paperRepository.findByReviewPaperId(paperId))
+                .orElseThrow(() -> new ResourceNotFoundException("Paper not found"));
+    }
+
+    private PaperVersion resolvePaperVersion(Long paperId, Integer versionNumber) {
+        PaperVersion paperVersion = paperVersionRepository.findByPaperIdAndVersion(paperId, versionNumber);
+        if (paperVersion != null) {
+            return paperVersion;
+        }
+
+        if (versionNumber != null) {
+            return paperVersionRepository.findById(versionNumber.longValue())
+                    .filter(candidate -> candidate.getPaper() != null
+                            && candidate.getPaper().getId().equals(paperId))
+                    .orElseThrow(() -> new ResourceNotFoundException("Paper version not found"));
+        }
+
+        throw new ResourceNotFoundException("Paper version not found");
     }
 
     private boolean hasText(String value) {

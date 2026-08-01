@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
@@ -28,10 +29,11 @@ import { SearchBarComponent } from '@shared/components/search-bar/search-bar.com
   templateUrl: './my-papers.component.html',
   styleUrl: './my-papers.component.scss'
 })
-export class MyPapersComponent implements OnInit {
+export class MyPapersComponent implements OnInit, OnDestroy {
   private readonly researcherService = inject(ResearcherService);
   private readonly tokenStorage = inject(TokenStorageService);
   private readonly router = inject(Router);
+  private refreshTimerId: number | null = null;
 
   readonly loading = signal(true);
   readonly allPapers = signal<PaperSubmissionResponse[]>([]);
@@ -52,13 +54,17 @@ export class MyPapersComponent implements OnInit {
       return;
     }
 
-    this.researcherService.getMySubmissions(user.id).subscribe({
-      next: (data) => {
-        this.allPapers.set(data);
-        this.loading.set(false);
-      },
-      error: () => this.loading.set(false)
-    });
+    this.loadSubmissions(user.id);
+    this.refreshTimerId = window.setInterval(() => {
+      this.loadSubmissions(user.id, false);
+    }, 5000);
+  }
+
+  ngOnDestroy(): void {
+    if (this.refreshTimerId !== null) {
+      window.clearInterval(this.refreshTimerId);
+      this.refreshTimerId = null;
+    }
   }
 
   onSearch(term: string): void {
@@ -67,5 +73,19 @@ export class MyPapersComponent implements OnInit {
 
   openPaper(paperId: number): void {
     this.router.navigate(['/researcher/papers', paperId]);
+  }
+
+  private loadSubmissions(researcherId: number, showSpinner = true): void {
+    if (showSpinner) {
+      this.loading.set(true);
+    }
+
+    this.researcherService.getMySubmissions(researcherId).subscribe({
+      next: (data) => {
+        this.allPapers.set(data);
+        this.loading.set(false);
+      },
+      error: () => this.loading.set(false)
+    });
   }
 }
