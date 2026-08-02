@@ -302,6 +302,7 @@ export class NotificationsComponent implements OnInit {
       case BackendNotificationType.PAPER_SUBMITTED:
         return 'SUBMISSION';
       case BackendNotificationType.REVISION_REQUESTED:
+      case BackendNotificationType.PAPER_RESUBMITTED:
         return 'REVISION';
       case BackendNotificationType.PAPER_APPROVED:
       case BackendNotificationType.PAPER_REJECTED:
@@ -319,6 +320,7 @@ export class NotificationsComponent implements OnInit {
     type: BackendNotificationType
   ): string {
     if (role === Role.REVIEWER) {
+<<<<<<< HEAD
       switch (type) {
         case BackendNotificationType.REVIEW_ASSIGNED:
           return '/reviewer/assigned-papers';
@@ -329,6 +331,11 @@ export class NotificationsComponent implements OnInit {
         default:
           return '/reviewer/dashboard';
       }
+=======
+      return type === BackendNotificationType.REVIEW_ASSIGNED || type === BackendNotificationType.PAPER_RESUBMITTED
+        ? '/reviewer/assigned-papers'
+        : '/reviewer/dashboard';
+>>>>>>> 8174198 (added report service implementation and fixed admin and re-recommendations)
     }
 
     if (role === Role.EDITOR) {

@@ -1,5 +1,6 @@
 package com.clarivate.reviewservice.Service.Impl;
 
+import com.clarivate.reviewservice.Client.PaperServiceClient;
 import com.clarivate.reviewservice.dto.Request.SubmitPaperRequest;
 import com.clarivate.reviewservice.dto.Request.UploadVersionRequest;
 import com.clarivate.reviewservice.dto.Response.PaperSubmissionResponse;
@@ -7,12 +8,15 @@ import com.clarivate.reviewservice.Entity.PaperSubmission;
 import com.clarivate.reviewservice.Entity.PaperVersion;
 import com.clarivate.reviewservice.Entity.ReviewHistory;
 import com.clarivate.reviewservice.Entity.ReviewProcess;
+import com.clarivate.reviewservice.Entity.ReviewerAssignment;
+import com.clarivate.reviewservice.Enums.AssignmentStatus;
 import com.clarivate.reviewservice.Enums.EditorDecision;
 import com.clarivate.reviewservice.Enums.ReviewStatus;
 import com.clarivate.reviewservice.Repository.PaperSubmissionRepository;
 import com.clarivate.reviewservice.Repository.PaperVersionRepository;
 import com.clarivate.reviewservice.Repository.ReviewHistoryRepository;
 import com.clarivate.reviewservice.Repository.ReviewProcessRepository;
+import com.clarivate.reviewservice.Repository.ReviewerAssignmentRepository;
 import com.clarivate.reviewservice.Service.ResearcherService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -21,14 +25,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,11 +45,9 @@ public class ResearcherServiceImpl implements ResearcherService {
     private final ReviewProcessRepository reviewProcessRepository;
     private final PaperVersionRepository paperVersionRepository;
     private final ReviewHistoryRepository reviewHistoryRepository;
-
+    private final ReviewerAssignmentRepository reviewerAssignmentRepository;
+    private final PaperServiceClient paperServiceClient;
     private final RestTemplate restTemplate = new RestTemplate();
-
-    @Value("${user-service.url:http://localhost:8081}")
-    private String userServiceUrl;
 
     @Value("${notification-service.url:http://localhost:8084}")
     private String notificationServiceUrl;
@@ -124,8 +124,32 @@ public class ResearcherServiceImpl implements ResearcherService {
 
         reviewProcess.setCurrentVersion(nextVersionNumber);
         reviewProcess.setReviewStatus(ReviewStatus.RESUBMITTED.toString());
+        reviewProcess.setReviewRecommendation(null);
         reviewProcess.setLastUpdated(LocalDateTime.now());
         reviewProcessRepository.save(reviewProcess);
+
+        List<ReviewerAssignment> assignments = reviewerAssignmentRepository
+                .findByReviewProcessReviewId(reviewProcess.getReviewId());
+
+        for (ReviewerAssignment assignment : assignments) {
+            assignment.setAssignmentStatus(AssignmentStatus.ASSIGNED);
+            reviewerAssignmentRepository.save(assignment);
+            sendReviewerNotification(
+                    assignment.getReviewerId(),
+                    paper.getTitle(),
+                    nextVersionNumber,
+                    paperId
+            );
+        }
+
+        if (assignments.isEmpty() && reviewProcess.getAssignedReviewerId() > 0) {
+            sendReviewerNotification(
+                    reviewProcess.getAssignedReviewerId(),
+                    paper.getTitle(),
+                    nextVersionNumber,
+                    paperId
+            );
+        }
 
         ReviewHistory history = ReviewHistory.builder()
                 .reviewProcess(reviewProcess)
@@ -136,9 +160,35 @@ public class ResearcherServiceImpl implements ResearcherService {
                 .build();
         reviewHistoryRepository.save(history);
 
-        notifyEditorOfRevision(reviewProcess, paper, nextVersionNumber);
+        try {
+            paperServiceClient.updateStatus(paperId, "UNDER_REVIEW");
+        } catch (Exception ex) {
+            log.warn("Failed to update PaperService status for paper {}", paperId, ex);
+        }
 
         return mapToResponse(paper);
+    }
+
+    private void sendReviewerNotification(Long reviewerId, String paperTitle, int versionNumber, Long paperId) {
+        if (reviewerId == null || reviewerId <= 0) {
+            return;
+        }
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("userId", reviewerId);
+        body.put("title", "Paper Version Re-uploaded");
+        body.put("message", "The researcher has re-uploaded paper \"" + paperTitle + "\" (Version " + versionNumber + "). Please review the new version and submit your recommendation.");
+        body.put("type", "PAPER_RESUBMITTED");
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+
+        try {
+            restTemplate.postForEntity(notificationServiceUrl + "/notifications", request, Object.class);
+        } catch (Exception ex) {
+            log.warn("Failed to send reviewer notification for paper {}", paperId, ex);
+        }
     }
 
     @Override

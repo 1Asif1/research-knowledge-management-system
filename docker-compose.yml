@@ -17,6 +17,133 @@ services:
       timeout: 5s
       retries: 10
 
+  userservice:
+    build:
+      context: .
+      dockerfile: userservice/Dockerfile
+    container_name: rkms-userservice
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/RKMSNEW
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+    ports:
+      - "8081:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  authservice:
+    build:
+      context: .
+      dockerfile: AuthServiceD/Dockerfile
+    container_name: rkms-authservice
+    environment:
+      USER_SERVICE_URL: http://userservice:8081
+      APP_CORS_ALLOWED_ORIGIN: "*"
+    ports:
+      - "8082:8082"
+    depends_on:
+      - userservice
+
+  notificationservice:
+    build:
+      context: .
+      dockerfile: notificationservice/Dockerfile
+    container_name: rkms-notificationservice
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/RKMSNEW
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+    ports:
+      - "8084:8084"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  paperservice:
+    build:
+      context: .
+      dockerfile: PaperService/Dockerfile
+    container_name: rkms-paperservice
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/RKMSNEW
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      USER_SERVICE_URL: http://userservice:8081
+      NOTIFICATION_SERVICE_URL: http://notificationservice:8084
+      REVIEW_SERVICE_URL: http://reviewservice:8085
+      REPORT_SERVICE_URL: http://reportservice:8086
+    ports:
+      - "8083:8083"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      userservice:
+        condition: service_started
+
+  reviewservice:
+    build:
+      context: .
+      dockerfile: ReviewService/Dockerfile
+    container_name: rkms-reviewservice
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/RKMSNEW
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      PAPER_SERVICE_URL: http://paperservice:8083
+    ports:
+      - "8085:8085"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  reportservice:
+    build:
+      context: .
+      dockerfile: ReportService/Dockerfile
+    container_name: rkms-reportservice
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/RKMSNEW
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+    ports:
+      - "8086:8086"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: api-gateway/Dockerfile
+    container_name: rkms-api-gateway
+    environment:
+      AUTH_SERVICE_URL: http://authservice:8082
+      USER_SERVICE_URL: http://userservice:8081
+      PAPER_SERVICE_URL: http://paperservice:8083
+      NOTIFICATION_SERVICE_URL: http://notificationservice:8084
+      REVIEW_SERVICE_URL: http://reviewservice:8085
+      REPORT_SERVICE_URL: http://reportservice:8086
+      APP_CORS_ALLOWED_ORIGIN: "*"
+    ports:
+      - "8080:8080"
+    depends_on:
+      - authservice
+      - userservice
+      - paperservice
+      - notificationservice
+      - reviewservice
+      - reportservice
+
+  research-frontend:
+    build:
+      context: .
+      dockerfile: research-frontend-main/Dockerfile
+    container_name: rkms-frontend
+    ports:
+      - "4200:80"
+    depends_on:
+      - api-gateway
+
 volumes:
   postgres-data:
-

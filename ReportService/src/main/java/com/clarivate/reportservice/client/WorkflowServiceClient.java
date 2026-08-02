@@ -2,6 +2,7 @@ package com.clarivate.reportservice.client;
 
 import com.clarivate.reportservice.dto.PublicationClientResponse;
 import com.clarivate.reportservice.dto.ReviewProcessClientResponse;
+import com.clarivate.reportservice.dto.StatusHistoryReportDto;
 import com.clarivate.reportservice.exception.DownstreamServiceException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -81,6 +82,25 @@ public class WorkflowServiceClient {
                         List<PublicationClientResponse>>() {
                 },
                 "PaperService"
+        );
+    }
+
+    public List<StatusHistoryReportDto> getPaperHistory(Long paperId) {
+        if (paperId == null || paperId <= 0) {
+            return Collections.emptyList();
+        }
+
+        String url = UriComponentsBuilder
+                .fromUriString(reviewServiceUrl)
+                .path("/api/editor/paper/{paperId}/history")
+                .buildAndExpand(paperId)
+                .toUriString();
+
+        return fetchList(
+                url,
+                new ParameterizedTypeReference<List<StatusHistoryReportDto>>() {
+                },
+                "ReviewService"
         );
     }
 

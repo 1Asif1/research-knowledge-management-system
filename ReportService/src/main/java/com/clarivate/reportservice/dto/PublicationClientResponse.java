@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -13,5 +15,10 @@ public class PublicationClientResponse {
     private Long id;
     private Long paperId;
     private String title;
+    private String description;
+    private String authorName;
+    private List<String> coAuthors;
+    private String status;
+    private String createdDate;
     private String publishedDate;
 }

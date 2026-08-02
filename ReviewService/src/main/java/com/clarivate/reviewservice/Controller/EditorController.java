@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import com.clarivate.reviewservice.dto.Response.ReviewHistoryResponse;
+
 @RestController
 @RequestMapping("/api/editor")
 @RequiredArgsConstructor
@@ -55,5 +57,10 @@ public class EditorController {
     public ResponseEntity<ReviewProcessResponse> getReview(@PathVariable Long reviewId) {
         ReviewProcessResponse response = editorService.getReview(reviewId);
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/paper/{paperId}/history")
+    public ResponseEntity<List<ReviewHistoryResponse>> getPaperHistory(@PathVariable Long paperId) {
+        return ResponseEntity.ok(editorService.getPaperHistory(paperId));
     }
 }

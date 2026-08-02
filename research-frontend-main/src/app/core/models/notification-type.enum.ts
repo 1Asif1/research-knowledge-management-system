@@ -6,7 +6,8 @@ export enum NotificationType {
   REVISION_REQUESTED = 'REVISION_REQUESTED',
   PAPER_APPROVED = 'PAPER_APPROVED',
   PAPER_REJECTED = 'PAPER_REJECTED',
-  PAPER_PUBLISHED = 'PAPER_PUBLISHED'
+  PAPER_PUBLISHED = 'PAPER_PUBLISHED',
+  PAPER_RESUBMITTED = 'PAPER_RESUBMITTED'
 }
 
 export function notificationIcon(type: NotificationType | string): string {
@@ -18,6 +19,7 @@ export function notificationIcon(type: NotificationType | string): string {
     case NotificationType.PAPER_APPROVED: return 'check_circle';
     case NotificationType.PAPER_REJECTED: return 'cancel';
     case NotificationType.PAPER_PUBLISHED: return 'menu_book';
+    case NotificationType.PAPER_RESUBMITTED: return 'published_with_changes';
     default: return 'notifications';
   }
 }

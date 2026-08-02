@@ -67,13 +67,13 @@ describe('ReviewPaperComponent', () => {
       editorId: 1,
       reviewerId: 7,
       currentVersion: 3,
-      reviewVersionId: 12,
+      currentVersionId: 12,
       reviewStatus: ReviewStatus.REVIEWER_ASSIGNED,
       reviewerRecommendation: null,
       editorDecision: null
     });
 
-    paperServiceSpy.downloadPaperPdfForReviewer.and.returnValue(of(pdfResponse));
+    paperServiceSpy.downloadPaperPdfForReviewer.and.returnValue(of(pdfResponse.body!));
 
     component.loadVersionContent();
 

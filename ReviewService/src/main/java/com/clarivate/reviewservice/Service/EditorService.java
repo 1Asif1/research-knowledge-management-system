@@ -5,6 +5,7 @@ import com.clarivate.reviewservice.dto.Request.EditorDecisionRequest;
 import com.clarivate.reviewservice.dto.Request.ReviewCommentRequest;
 import com.clarivate.reviewservice.dto.Response.AvailableReviewerResponse;
 import com.clarivate.reviewservice.dto.Response.ReviewCommentResponse;
+import com.clarivate.reviewservice.dto.Response.ReviewHistoryResponse;
 import com.clarivate.reviewservice.dto.Response.ReviewProcessResponse;
 
 import java.util.List;
@@ -16,4 +17,5 @@ public interface EditorService {
     List<ReviewProcessResponse> getAssignedReviews(Long editorId);
     ReviewProcessResponse getReview(Long reviewId);
     List<AvailableReviewerResponse> getAvailableReviewers();
+    List<ReviewHistoryResponse> getPaperHistory(Long paperId);
 }

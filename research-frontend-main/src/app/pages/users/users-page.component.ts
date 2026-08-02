@@ -44,12 +44,15 @@ import { ALL_ROLES, Role, UserResponse, roleDisplayName } from '@core/models';
     <section class="users-list" *ngIf="!loading() && users().length > 0">
       <article *ngFor="let user of users()">
         <div class="users-card-head">
-          <h3>{{ user.firstName }} {{ user.lastName }}</h3>
+          <div class="users-card-title">
+            <h3>{{ user.firstName }} {{ user.lastName }}</h3>
+            <span class="role-badge" [class]="(user.role || '').toLowerCase()">{{ roleDisplayName(user.role) }}</span>
+          </div>
           <p>{{ user.email }}</p>
         </div>
         <div class="users-actions">
-          <select [value]="roleDrafts()[user.id]" (change)="onRoleDraftChange(user.id, $any($event.target).value)">
-            <option *ngFor="let role of roles" [value]="role">{{ roleDisplayName(role) }}</option>
+          <select [value]="roleDrafts()[user.id] || user.role" (change)="onRoleDraftChange(user.id, $any($event.target).value)">
+            <option *ngFor="let role of roles" [value]="role" [selected]="role === (roleDrafts()[user.id] || user.role)">{{ roleDisplayName(role) }}</option>
           </select>
           <button type="button" (click)="updateRole(user)" [disabled]="updatingUserId() === user.id">
             {{ updatingUserId() === user.id ? 'Saving...' : 'Update role' }}
@@ -173,14 +176,50 @@ import { ALL_ROLES, Role, UserResponse, roleDisplayName } from '@core/models';
       align-items: center;
     }
 
+    .users-card-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
     .users-card-head h3 {
-      margin: 0 0 4px;
+      margin: 0;
       font-size: 18px;
       color: #10284a;
     }
 
+    .role-badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      background: #e2e8f0;
+      color: #334155;
+    }
+
+    .role-badge.researcher {
+      background: #e0f2fe;
+      color: #0369a1;
+    }
+
+    .role-badge.reviewer {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .role-badge.editor {
+      background: #f3e8ff;
+      color: #6b21a8;
+    }
+
+    .role-badge.admin {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
     .users-card-head p {
-      margin: 0;
+      margin: 4px 0 0;
       color: #455677;
       font-size: 14px;
     }
@@ -283,6 +322,10 @@ export class UsersPageComponent implements OnDestroy {
         this.users.update((currentUsers) =>
           currentUsers.map((currentUser) => currentUser.id === updatedUser.id ? updatedUser : currentUser)
         );
+        this.roleDrafts.update((drafts) => ({
+          ...drafts,
+          [updatedUser.id]: updatedUser.role
+        }));
       },
       error: (error: HttpErrorResponse) => {
         this.updatingUserId.set(null);

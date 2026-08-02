@@ -99,6 +99,16 @@ export const EDITOR_ROUTES: Routes = [
     }
   },
   {
+    path: 'reports',
+    loadComponent: () =>
+      import('./reports/editor-reports.component').then(
+        (m) => m.EditorReportsComponent
+      ),
+    data: {
+      breadcrumb: 'Reports'
+    }
+  },
+  {
     path: 'profile',
     loadComponent: () =>
       import('@shared/components/profile/profile.component').then(

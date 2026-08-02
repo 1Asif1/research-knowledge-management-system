@@ -161,10 +161,22 @@ class ReviewServiceIntegrationTest {
         assertEquals(2, versionsAfterUpload.size());
         assertEquals(2, versionsAfterUpload.get(1).getVersionNumber());
 
-        // Verify review status updated to RESUBMITTED
+        // Verify review status updated to RESUBMITTED and recommendation reset for re-review
         ReviewProcess updatedReview = reviewProcessRepository.findById(reviewProcess.getReviewId()).orElse(null);
         assertNotNull(updatedReview);
         assertEquals(ReviewStatus.RESUBMITTED.toString(), updatedReview.getReviewStatus());
+        assertNull(updatedReview.getReviewRecommendation());
+        verify(paperServiceClient).updateStatus(paperId, "UNDER_REVIEW");
+
+        // Step 8b: Reviewer reviews re-uploaded version and submits new recommendation (overwriting previous MINOR_REVISION with ACCEPT)
+        ReviewRecommendationRequest newRecommendationRequest = ReviewRecommendationRequest.builder()
+                .recommendation(ReviewerRecommendation.ACCEPT)
+                .build();
+
+        ReviewProcessResponse newRecommendationResponse = reviewerService.submitRecommendations(reviewProcess.getReviewId(), newRecommendationRequest);
+        assertNotNull(newRecommendationResponse);
+        assertEquals(ReviewerRecommendation.ACCEPT, newRecommendationResponse.getReviewerRecommendation());
+        assertEquals(ReviewStatus.APPROVED, newRecommendationResponse.getReviewStatus());
 
         // Step 9: Editor makes final decision
         EditorDecisionRequest decisionRequest = EditorDecisionRequest.builder()
@@ -175,7 +187,7 @@ class ReviewServiceIntegrationTest {
         assertNotNull(decisionResponse);
         assertEquals(EditorDecision.ACCEPT, decisionResponse.getEditorDecision());
         assertEquals(ReviewStatus.SENT_TO_PUBLICATION, decisionResponse.getReviewStatus());
-        verify(paperServiceClient).updateStatus(paperId, "APPROVED");
+        verify(paperServiceClient, org.mockito.Mockito.atLeastOnce()).updateStatus(paperId, "APPROVED");
 
         // Step 10: Researcher views their submission details
         PaperSubmissionResponse paperDetails = researcherService.getSubmission(paperId);
@@ -228,19 +240,30 @@ class ReviewServiceIntegrationTest {
 
         PaperSubmissionResponse submission = researcherService.submitPaper(submitRequest);
         ReviewProcess reviewProcess = reviewProcessRepository.findByPaperId(submission.getPaperId()).orElseThrow();
+
+        editorService.assignReviewer(AssignReviewerRequest.builder()
+                .reviewId(reviewProcess.getReviewId())
+                .reviewerId(100L)
+                .editorId(1L)
+                .build());
+
+        reviewerService.submitRecommendations(reviewProcess.getReviewId(), ReviewRecommendationRequest.builder()
+                .recommendation(ReviewerRecommendation.ACCEPT)
+                .build());
+
+        reviewProcess = reviewProcessRepository.findByPaperId(submission.getPaperId()).orElseThrow();
         String statusBeforeDecision = reviewProcess.getReviewStatus();
 
         EditorDecisionRequest pendingDecision = EditorDecisionRequest.builder()
                 .decision(EditorDecision.PENDING)
                 .build();
 
-        ReviewProcessResponse response = editorService.makeFinalDecision(reviewProcess.getReviewId(), pendingDecision);
-
-        assertEquals(EditorDecision.PENDING, response.getEditorDecision());
-        assertEquals(ReviewStatus.valueOf(statusBeforeDecision), response.getReviewStatus());
+        final Long reviewIdForLambda = reviewProcess.getReviewId();
+        assertThrows(IllegalArgumentException.class, () ->
+                editorService.makeFinalDecision(reviewIdForLambda, pendingDecision)
+        );
 
         ReviewProcess persisted = reviewProcessRepository.findById(reviewProcess.getReviewId()).orElseThrow();
         assertEquals(statusBeforeDecision, persisted.getReviewStatus());
-        verify(paperServiceClient, never()).updateStatus(anyLong(), anyString());
     }
 }

@@ -1,162 +1,233 @@
 <div class="reports-page">
   <header class="page-header">
     <div>
-      <h1>Reports</h1>
-
+      <h1>Published Paper Reports</h1>
       <p class="text-secondary">
-        Monitor the editorial workflow, reviewer activity and
-        publication outcomes.
+        Generate and download audit reports for published papers detailing completion time, status history, and submitted versions.
       </p>
     </div>
-
-    <button
-      mat-stroked-button
-      type="button"
-      (click)="loadSummary()"
-      [disabled]="loading()"
-    >
-      <mat-icon>refresh</mat-icon>
-
-      {{ loading() ? 'Refreshing...' : 'Refresh' }}
-    </button>
   </header>
 
-  <app-loading-spinner
-    *ngIf="loading()"
-    message="Loading editor reports..."
-  ></app-loading-spinner>
+  <!-- Published Paper Selection Section -->
+  <section class="card-surface paper-selector-card">
+    <div class="selector-header">
+      <div>
+        <h2>Select Published Paper</h2>
+        <p class="text-secondary">
+          Choose a published paper to view its full publication timeline, status transitions, version history, and download as PDF.
+        </p>
+      </div>
 
+      <button
+        mat-stroked-button
+        type="button"
+        (click)="loadPublishedPapers()"
+        [disabled]="loadingPublishedPapers()"
+      >
+        <mat-icon>refresh</mat-icon>
+        Refresh List
+      </button>
+    </div>
+
+    <app-loading-spinner
+      *ngIf="loadingPublishedPapers()"
+      message="Fetching published papers..."
+    ></app-loading-spinner>
+
+    <div
+      *ngIf="!loadingPublishedPapers() && publishedPapers().length > 0"
+      class="paper-picker-wrapper"
+    >
+      <label for="paper-select" class="picker-label">Choose Published Paper:</label>
+      <div class="select-container">
+        <select
+          id="paper-select"
+          class="paper-select-input"
+          [ngModel]="selectedPaperId()"
+          (ngModelChange)="selectPaper($event)"
+        >
+          <option
+            *ngFor="let paper of publishedPapers()"
+            [value]="paper.paperId"
+          >
+            {{ paper.title }} — {{ paper.authorName }} (Published: {{ paper.publishedDate | date:'mediumDate' }})
+          </option>
+        </select>
+        <mat-icon class="select-icon">expand_more</mat-icon>
+      </div>
+    </div>
+
+    <div
+      *ngIf="!loadingPublishedPapers() && publishedPapers().length === 0"
+      class="empty-state"
+    >
+      <mat-icon>search_off</mat-icon>
+      <h3>No Published Papers Found</h3>
+      <p class="text-secondary">
+        No published papers are available in the system yet. Reports will appear once papers are published.
+      </p>
+    </div>
+  </section>
+
+  <!-- Report Error -->
   <section
-    *ngIf="!loading() && errorMessage()"
+    *ngIf="publishedReportError()"
     class="error-card card-surface"
   >
     <mat-icon>error_outline</mat-icon>
-
     <div>
-      <h2>Could not load reports</h2>
-
-      <p>{{ errorMessage() }}</p>
-
+      <h2>Could not load report</h2>
+      <p>{{ publishedReportError() }}</p>
       <button
         mat-flat-button
         color="primary"
         type="button"
-        (click)="loadSummary()"
+        (click)="loadPublishedPapers()"
       >
         Retry
       </button>
     </div>
   </section>
 
-  <ng-container *ngIf="!loading() && !errorMessage() && summary() as data">
-    <section class="workflow-cards">
-      <article
-        *ngFor="let card of workflowCards()"
-        class="stat-card card-surface"
-      >
-        <div
-          class="stat-card__icon"
-          [attr.data-modifier]="card.modifier"
-        >
-          <mat-icon>{{ card.icon }}</mat-icon>
-        </div>
+  <!-- Report Loading Spinner -->
+  <app-loading-spinner
+    *ngIf="loadingPublishedReport()"
+    message="Generating paper publication report..."
+  ></app-loading-spinner>
 
+  <!-- Detailed Published Paper Report Display -->
+  <ng-container *ngIf="!loadingPublishedReport() && publishedReport() as report">
+    <section class="card-surface report-header-card">
+      <div class="report-title-area">
+        <span class="published-badge">
+          <mat-icon>verified</mat-icon>
+          PUBLISHED REPORT
+        </span>
+        <h2>{{ report.title }}</h2>
+        <p class="author-line">
+          <strong>Author:</strong> {{ report.authorName }}
+          <span *ngIf="report.coAuthors && report.coAuthors.length > 0">
+            | <strong>Co-Authors:</strong> {{ report.coAuthors.join(', ') }}
+          </span>
+        </p>
+      </div>
+
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        class="download-pdf-btn"
+        (click)="downloadPdfReport()"
+        [disabled]="downloadingPdf()"
+      >
+        <mat-icon>picture_as_pdf</mat-icon>
+        {{ downloadingPdf() ? 'Generating PDF...' : 'Download PDF Report' }}
+      </button>
+    </section>
+
+    <!-- Key Metrics Cards -->
+    <section class="report-metrics-grid">
+      <article class="metric-card metric-card--time">
+        <div class="metric-icon">
+          <mat-icon>timer</mat-icon>
+        </div>
         <div>
-          <span class="text-secondary">{{ card.label }}</span>
-          <strong>{{ card.value }}</strong>
+          <span class="metric-label">Time to Complete Publication</span>
+          <strong class="metric-value">{{ report.completionTimeFormatted }}</strong>
+          <span class="metric-sub">
+            {{ report.submittedDate | date:'mediumDate' }} &rarr; {{ report.publishedDate | date:'mediumDate' }}
+          </span>
+        </div>
+      </article>
+
+      <article class="metric-card metric-card--versions">
+        <div class="metric-icon">
+          <mat-icon>history_edu</mat-icon>
+        </div>
+        <div>
+          <span class="metric-label">Versions Submitted</span>
+          <strong class="metric-value">{{ report.totalVersionsSubmitted }} {{ report.totalVersionsSubmitted === 1 ? 'Version' : 'Versions' }}</strong>
+          <span class="metric-sub">Total paper iterations uploaded</span>
+        </div>
+      </article>
+
+      <article class="metric-card metric-card--status">
+        <div class="metric-icon">
+          <mat-icon>fact_check</mat-icon>
+        </div>
+        <div>
+          <span class="metric-label">Publication Status</span>
+          <strong class="metric-value status-badge-pub">{{ report.status }}</strong>
+          <span class="metric-sub">{{ report.statusHistory.length }} workflow steps recorded</span>
         </div>
       </article>
     </section>
 
-    <section class="card-surface recommendations-card">
+    <!-- Submitted Paper Versions Section -->
+    <section class="card-surface versions-section">
       <header class="section-header">
         <div>
-          <h2>Recommendation Distribution</h2>
+          <h2>Submitted Versions Breakdown</h2>
           <p class="text-secondary">
-            Reviewer recommendations across your assigned reviews.
+            Review all versions submitted by the author during the publication workflow.
           </p>
         </div>
       </header>
 
-      <div class="recommendations">
-        <div
-          *ngFor="let row of recommendationRows()"
-          class="recommendation-row"
-        >
-          <div class="recommendation-row__meta">
-            <span>{{ row.label }}</span>
-            <strong>{{ row.value }}</strong>
-          </div>
-
-          <div class="recommendation-row__bar">
-            <div
-              class="recommendation-row__bar-fill"
-              [attr.data-modifier]="row.modifier"
-              [style.width.%]="row.percent"
-            ></div>
-          </div>
-
-          <span class="recommendation-row__percent">
-            {{ row.percent }}%
-          </span>
-        </div>
-      </div>
-    </section>
-
-    <section class="card-surface workload-card">
-      <header class="section-header">
-        <div>
-          <h2>Reviewer Workload</h2>
-          <p class="text-secondary">
-            Active reviewer assignments across your papers.
-          </p>
-        </div>
-      </header>
-
-      <div
-        *ngIf="reviewerWorkloads().length > 0; else emptyWorkload"
-        class="workload-table"
-      >
-        <div class="workload-table__header">
-          <span>Reviewer</span>
-          <span>Assigned</span>
-          <span>Completed</span>
-          <span>Pending</span>
-          <span>Workload Status</span>
+      <div class="versions-table">
+        <div class="versions-table__header">
+          <span>Version</span>
+          <span>File Name</span>
+          <span>Change Summary / Notes</span>
+          <span>Upload Date</span>
         </div>
 
         <article
-          *ngFor="let workload of reviewerWorkloads()"
-          class="workload-table__row"
+          *ngFor="let ver of report.versions"
+          class="versions-table__row"
         >
-          <span class="reviewer-cell">
-            <mat-icon>person</mat-icon>
-            {{ reviewerLabel(workload.reviewerId) }}
+          <span class="version-badge">Version {{ ver.versionNumber }}</span>
+          <span class="file-cell">
+            <mat-icon>description</mat-icon>
+            {{ ver.fileName }}
           </span>
-
-          <span>{{ workload.assigned }}</span>
-          <span>{{ workload.completed }}</span>
-          <span>{{ workload.pending }}</span>
-
-          <span
-            class="workload-status"
-            [attr.data-status]="workloadStatusModifier(workload.pending)"
-          >
-            {{ workloadStatus(workload.pending) }}
-          </span>
+          <span>{{ ver.changeSummary || 'Initial submission' }}</span>
+          <span>{{ ver.uploadedDate | date:'medium' }}</span>
         </article>
       </div>
+    </section>
 
-      <ng-template #emptyWorkload>
-        <div class="empty-state">
-          <mat-icon>groups</mat-icon>
-          <h3>No reviewer workloads</h3>
+    <!-- Complete Status History & Audit Trail -->
+    <section class="card-surface history-section">
+      <header class="section-header">
+        <div>
+          <h2>Paper Status Transition History</h2>
           <p class="text-secondary">
-            Reviewer activity will appear here once reviewers are
-            assigned to your papers.
+            Complete audit trail of every status transition from initial submission to final publication.
           </p>
         </div>
-      </ng-template>
+      </header>
+
+      <div class="timeline-container">
+        <div
+          *ngFor="let item of report.statusHistory; let isLast = last"
+          class="timeline-item"
+        >
+          <div class="timeline-marker">
+            <div class="timeline-dot"></div>
+            <div *ngIf="!isLast" class="timeline-line"></div>
+          </div>
+
+          <div class="timeline-content">
+            <div class="timeline-header">
+              <span class="timeline-action">{{ item.action }}</span>
+              <span class="timeline-date">{{ item.actionDate | date:'medium' }}</span>
+            </div>
+            <p class="timeline-performer"><strong>Performed By:</strong> {{ item.performedBy }}</p>
+            <p class="timeline-remarks">{{ item.remarks }}</p>
+          </div>
+        </div>
+      </div>
     </section>
   </ng-container>
 </div>

@@ -354,4 +354,34 @@ public class EditorServiceImpl implements EditorService {
             );
         }
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<com.clarivate.reviewservice.dto.Response.ReviewHistoryResponse> getPaperHistory(Long paperId) {
+        if (paperId == null || paperId <= 0) {
+            return Collections.emptyList();
+        }
+
+        return reviewHistoryRepository.findByReviewProcessPaperIdOrderByActionDateAsc(paperId)
+                .stream()
+                .map(history -> com.clarivate.reviewservice.dto.Response.ReviewHistoryResponse.builder()
+                        .historyId(history.getHistoryId())
+                        .action(history.getAction())
+                        .performedBy(parseUserId(history.getPerformedBy()))
+                        .remarks(history.getRemarks())
+                        .actionDate(history.getActionDate())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    private Long parseUserId(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        try {
+            return Long.parseLong(raw.trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
 }

@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface ReviewHistoryRepository extends JpaRepository<ReviewHistory, Long> {
     List<ReviewHistory> findByReviewProcessReviewIdOrderByActionDateAsc(Long reviewId);
+    List<ReviewHistory> findByReviewProcessPaperIdOrderByActionDateAsc(Long paperId);
 }

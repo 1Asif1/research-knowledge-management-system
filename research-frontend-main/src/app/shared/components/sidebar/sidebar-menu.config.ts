@@ -60,6 +60,11 @@ export const SIDEBAR_MENUS: Record<Role, SidebarMenuItem[]> = {
       icon: 'workspace_premium'
     },
     {
+      label: 'Reports',
+      route: '/editor/reports',
+      icon: 'assessment'
+    },
+    {
       label: 'Notifications',
       route: '/editor/notifications',
       icon: 'notifications'
