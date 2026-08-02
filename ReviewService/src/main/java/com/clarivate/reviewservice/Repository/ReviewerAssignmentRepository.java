@@ -11,4 +11,5 @@ public interface ReviewerAssignmentRepository extends JpaRepository<ReviewerAssi
     List<ReviewerAssignment> findByAssignmentStatus(AssignmentStatus assignmentStatus);
     List<ReviewerAssignment> findByReviewProcessReviewId(Long reviewId);
     List<ReviewerAssignment> findByReviewProcessReviewIdAndReviewerId(Long reviewId, Long reviewerId);
+
 }

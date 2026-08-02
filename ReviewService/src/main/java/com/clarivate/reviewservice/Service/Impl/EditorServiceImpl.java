@@ -1,5 +1,8 @@
 package com.clarivate.reviewservice.Service.Impl;
-
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import java.util.HashMap;
 import com.clarivate.reviewservice.Client.PaperServiceClient;
 import com.clarivate.reviewservice.Entity.ReviewProcess;
 import com.clarivate.reviewservice.Entity.ReviewerAssignment;
@@ -44,6 +47,8 @@ public class EditorServiceImpl implements EditorService {
     private final RestTemplate restTemplate = new RestTemplate();
     @Value("${user-service.url:http://localhost:8081}")
     private String userServiceUrl;
+    @Value("${notification-service.url:http://localhost:8084}")
+    private String notificationServiceUrl;
 
     @Override
     public ReviewProcessResponse assignReviewer(AssignReviewerRequest request) {
@@ -74,35 +79,122 @@ public class EditorServiceImpl implements EditorService {
                 .build();
         reviewHistoryRepository.save(history);
 
+        sendNotification(
+                request.getReviewerId(),
+                "Review Assigned",
+                "You have been assigned to review \""
+                        + resolvePaperTitle(reviewProcess.getPaperId())
+                        + "\".",
+                "REVIEW_ASSIGNED"
+        );
+
         return mapToResponse(updatedReview);
     }
 
     @Override
-    public ReviewProcessResponse makeFinalDecision(Long reviewId, EditorDecisionRequest request) {
-        ReviewProcess reviewProcess = reviewProcessRepository.findById(reviewId)
-                .orElseThrow(() -> new EntityNotFoundException("Review not found with id: " + reviewId));
+    public ReviewProcessResponse makeFinalDecision(
+            Long reviewId,
+            EditorDecisionRequest request
+    ) {
+        ReviewProcess reviewProcess =
+                reviewProcessRepository.findById(reviewId)
+                        .orElseThrow(() ->
+                                new EntityNotFoundException(
+                                        "Review not found with id: " + reviewId
+                                )
+                        );
+
+        /*
+         * The editor cannot make a final decision until
+         * the reviewer has submitted a recommendation.
+         */
+        if (reviewProcess.getReviewRecommendation() == null
+                || reviewProcess.getReviewRecommendation().isBlank()) {
+            throw new IllegalStateException(
+                    "The reviewer must submit a recommendation before "
+                            + "the editor can make a final decision."
+            );
+        }
+
+        /*
+         * Also verify that the reviewer assignment was completed.
+         */
+        ReviewerAssignment assignment =
+                reviewerAssignmentRepository
+                        .findByReviewProcessReviewId(reviewId)
+                        .stream()
+                        .findFirst()
+                        .orElseThrow(() ->
+                                new IllegalStateException(
+                                        "Reviewer assignment was not found "
+                                                + "for review id: " + reviewId
+                                )
+                        );
+
+        if (assignment.getAssignmentStatus()
+                != AssignmentStatus.COMPLETED) {
+            throw new IllegalStateException(
+                    "The reviewer must complete the review before "
+                            + "the editor can make a final decision."
+            );
+        }
+
+        /*
+         * Prevent the editor from changing an existing final decision.
+         */
+        if (reviewProcess.getEditorDecision() != null
+                && !reviewProcess.getEditorDecision().isBlank()) {
+            throw new IllegalStateException(
+                    "A final editorial decision has already been submitted."
+            );
+        }
 
         EditorDecision decision = request.getDecision();
-        reviewProcess.setEditorDecision(decision.toString());
-        if (decision == EditorDecision.ACCEPT) {
-            reviewProcess.setReviewStatus(ReviewStatus.SENT_TO_PUBLICATION.toString());
-        } else if (decision == EditorDecision.REJECT) {
-            reviewProcess.setReviewStatus(ReviewStatus.REJECTED.toString());
+
+        if (decision == null || decision == EditorDecision.PENDING) {
+            throw new IllegalArgumentException(
+                    "Please select either ACCEPT or REJECT."
+            );
         }
+
+        reviewProcess.setEditorDecision(decision.toString());
+
+        if (decision == EditorDecision.ACCEPT) {
+            reviewProcess.setReviewStatus(
+                    ReviewStatus.SENT_TO_PUBLICATION.toString()
+            );
+        } else if (decision == EditorDecision.REJECT) {
+            reviewProcess.setReviewStatus(
+                    ReviewStatus.REJECTED.toString()
+            );
+        }
+
         reviewProcess.setLastUpdated(LocalDateTime.now());
-        ReviewProcess updatedReview = reviewProcessRepository.save(reviewProcess);
+
+        ReviewProcess updatedReview =
+                reviewProcessRepository.save(reviewProcess);
+
         String paperStatus = mapPaperStatus(decision);
+
         if (paperStatus != null) {
-            syncPaperStatus(reviewProcess.getPaperId(), paperStatus);
+            syncPaperStatus(
+                    reviewProcess.getPaperId(),
+                    paperStatus
+            );
         }
 
         ReviewHistory history = ReviewHistory.builder()
                 .reviewProcess(reviewProcess)
                 .action("Final Decision Made")
-                .performedBy(String.valueOf(reviewProcess.getEditorId()))
-                .remarks("Decision: " + request.getDecision())
+                .performedBy(
+                        String.valueOf(
+                                reviewProcess.getEditorId()
+                        )
+                )
+                .remarks("Decision: " + decision)
                 .actionDate(LocalDateTime.now())
                 .build();
+
         reviewHistoryRepository.save(history);
 
         return mapToResponse(updatedReview);
@@ -193,5 +285,49 @@ public class EditorServiceImpl implements EditorService {
 
     private void syncPaperStatus(Long paperId, String status) {
         paperServiceClient.updateStatus(paperId, status);
+    }
+
+    private String resolvePaperTitle(Long paperId) {
+        return paperSubmissionRepository
+                .findById(Math.toIntExact(paperId))
+                .map(submission -> submission.getTitle())
+                .orElse("Paper #" + paperId);
+    }
+
+    private void sendNotification(
+            Long userId,
+            String title,
+            String message,
+            String type
+    ) {
+        Map<String, Object> body = new HashMap<>();
+
+        body.put("userId", userId);
+        body.put("title", title);
+        body.put("message", message);
+        body.put("type", type);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        HttpEntity<Map<String, Object>> request =
+                new HttpEntity<>(body, headers);
+
+        try {
+            restTemplate.postForEntity(
+                    notificationServiceUrl + "/notifications",
+                    request,
+                    Object.class
+            );
+        } catch (Exception exception) {
+            /*
+             * Assignment must remain successful even if the
+             * notification service is temporarily unavailable.
+             */
+            System.err.println(
+                    "Reviewer was assigned, but notification creation failed: "
+                            + exception.getMessage()
+            );
+        }
     }
 }

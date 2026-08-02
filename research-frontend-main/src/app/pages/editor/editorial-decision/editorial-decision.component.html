@@ -22,16 +22,31 @@
 
     <div>
       <h2>Could not load review</h2>
+
       <p>{{ errorMessage() }}</p>
+
+      <button
+        mat-stroked-button
+        type="button"
+        (click)="goBack()"
+      >
+        Return to Editorial Decisions
+      </button>
     </div>
   </section>
 
   <ng-container
-    *ngIf="!loading() && !errorMessage() && review()"
+    *ngIf="
+      !loading() &&
+      !errorMessage() &&
+      review()
+    "
   >
     <header class="paper-header card-surface">
       <div>
-        <span class="label">Editorial Decision</span>
+        <span class="label">
+          Editorial Decision
+        </span>
 
         <h1>{{ getPaperTitle() }}</h1>
 
@@ -44,12 +59,22 @@
 
       <span
         class="status-badge"
-        [class.status-badge--completed]="isCompleted()"
+        [class.status-badge--completed]="
+          isCompleted()
+        "
+        [class.status-badge--waiting]="
+          !hasReviewerRecommendation() &&
+          !isCompleted()
+        "
       >
         {{
           isCompleted()
-            ? formatValue(review()?.editorDecision)
-            : 'Awaiting Decision'
+            ? formatValue(
+                review()?.editorDecision
+              )
+            : hasReviewerRecommendation()
+              ? 'Awaiting Decision'
+              : 'Review Pending'
         }}
       </span>
     </header>
@@ -61,53 +86,137 @@
         <div class="summary-grid">
           <div>
             <span>Reviewer</span>
+
             <strong>
-              Reviewer #{{ review()?.reviewerId }}
+              {{
+              review()?.reviewerId
+              ? 'Reviewer #' +
+              review()?.reviewerId
+              : 'Not assigned'
+              }}
             </strong>
           </div>
 
           <div>
             <span>Review Status</span>
-            <strong>
-              {{ formatValue(review()?.reviewStatus) }}
-            </strong>
-          </div>
 
-          <div>
-            <span>Reviewer Recommendation</span>
-            <strong class="recommendation">
+            <strong>
               {{
               formatValue(
-              review()?.reviewerRecommendation
+              review()?.reviewStatus
               )
               }}
             </strong>
           </div>
 
           <div>
+            <span>Reviewer Recommendation</span>
+
+            <strong
+              class="recommendation"
+              [class.recommendation--pending]="
+                !hasReviewerRecommendation()
+              "
+              [class.recommendation--completed]="
+                hasReviewerRecommendation()
+              "
+            >
+              {{
+              hasReviewerRecommendation()
+              ? formatValue(
+              review()
+              ?.reviewerRecommendation
+              )
+              : 'Pending'
+              }}
+            </strong>
+          </div>
+
+          <div>
             <span>Current Version</span>
+
             <strong>
-              Version {{ review()?.currentVersion }}
+              Version
+              {{ review()?.currentVersion }}
             </strong>
           </div>
         </div>
 
-        <div class="recommendation-note">
+        <div
+          class="recommendation-note"
+          *ngIf="hasReviewerRecommendation()"
+        >
           <mat-icon>info</mat-icon>
 
           <p>
-            The reviewer recommendation is advisory. The editor
-            is responsible for the final decision.
+            The reviewer recommendation is advisory.
+            The editor is responsible for the final
+            decision.
           </p>
+        </div>
+
+        <div
+          class="review-pending-note"
+          *ngIf="
+            !hasReviewerRecommendation() &&
+            !hasFinalDecision()
+          "
+        >
+          <mat-icon>hourglass_empty</mat-icon>
+
+          <div>
+            <strong>
+              Reviewer recommendation pending
+            </strong>
+
+            <p>
+              The reviewer must complete the review and
+              submit a recommendation before the editor
+              can make the final decision.
+            </p>
+          </div>
         </div>
       </main>
 
       <aside class="decision-card card-surface">
         <h2>Final Decision</h2>
 
-        <p>
-          Select the final editorial decision for this paper.
+        <p *ngIf="canMakeFinalDecision()">
+          Select the final editorial decision for this
+          paper.
         </p>
+
+        <p
+          *ngIf="
+            !hasReviewerRecommendation() &&
+            !hasFinalDecision()
+          "
+        >
+          Decision controls are disabled until the
+          reviewer submits a recommendation.
+        </p>
+
+        <div
+          class="decision-completed-message"
+          *ngIf="hasFinalDecision()"
+        >
+          <mat-icon>check_circle</mat-icon>
+
+          <div>
+            <strong>
+              Final decision submitted
+            </strong>
+
+            <p>
+              This paper was
+              {{
+              formatValue(
+              review()?.editorDecision
+              )
+              }}.
+            </p>
+          </div>
+        </div>
 
         <form
           [formGroup]="decisionForm"
@@ -117,8 +226,18 @@
             formControlName="decision"
             class="decision-options"
           >
-            <label class="decision-option decision-option--accept">
-              <mat-radio-button value="ACCEPT">
+            <label
+              class="
+                decision-option
+                decision-option--accept
+              "
+              [class.decision-option--disabled]="
+                !canMakeFinalDecision()
+              "
+            >
+              <mat-radio-button
+                value="ACCEPT"
+              >
               </mat-radio-button>
 
               <mat-icon>verified</mat-icon>
@@ -132,8 +251,18 @@
               </div>
             </label>
 
-            <label class="decision-option decision-option--reject">
-              <mat-radio-button value="REJECT">
+            <label
+              class="
+                decision-option
+                decision-option--reject
+              "
+              [class.decision-option--disabled]="
+                !canMakeFinalDecision()
+              "
+            >
+              <mat-radio-button
+                value="REJECT"
+              >
               </mat-radio-button>
 
               <mat-icon>cancel</mat-icon>
@@ -142,7 +271,8 @@
                 <strong>Reject Paper</strong>
 
                 <span>
-                  Reject the paper from the review process.
+                  Reject the paper from the review
+                  process.
                 </span>
               </div>
             </label>
@@ -151,8 +281,10 @@
           <p
             class="form-error"
             *ngIf="
-              decisionForm.controls.decision.invalid &&
-              decisionForm.controls.decision.touched
+              decisionForm.controls.decision
+                .invalid &&
+              decisionForm.controls.decision
+                .touched
             "
           >
             Select an editorial decision.
@@ -164,9 +296,8 @@
             type="submit"
             class="submit-button"
             [disabled]="
-              submitting() ||
               decisionForm.invalid ||
-              isCompleted()
+              !canMakeFinalDecision()
             "
           >
             <mat-icon>gavel</mat-icon>
@@ -174,8 +305,10 @@
             {{
             submitting()
             ? 'Submitting Decision...'
-            : isCompleted()
+            : hasFinalDecision()
             ? 'Decision Submitted'
+            : !hasReviewerRecommendation()
+            ? 'Awaiting Reviewer'
             : 'Submit Final Decision'
             }}
           </button>
@@ -183,7 +316,9 @@
 
         <p class="warning">
           <mat-icon>warning_amber</mat-icon>
-          A final decision cannot be changed from this page.
+
+          A final decision cannot be changed from this
+          page.
         </p>
       </aside>
     </div>

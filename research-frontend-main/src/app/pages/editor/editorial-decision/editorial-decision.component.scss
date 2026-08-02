@@ -51,9 +51,16 @@
   color: #067647;
 }
 
+.status-badge--waiting {
+  background: #fff3e8;
+  color: #b54708;
+}
+
 .decision-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 380px;
+  grid-template-columns:
+    minmax(0, 1fr)
+    380px;
   gap: 22px;
   align-items: start;
 }
@@ -70,7 +77,8 @@
 
 .summary-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
   gap: 20px;
 }
 
@@ -86,7 +94,16 @@
 }
 
 .recommendation {
-  color: var(--color-primary, #193b65);
+  color:
+    var(--color-primary, #193b65);
+}
+
+.recommendation--pending {
+  color: #b54708;
+}
+
+.recommendation--completed {
+  color: #067647;
 }
 
 .recommendation-note {
@@ -104,6 +121,31 @@
   line-height: 1.5;
 }
 
+.review-pending-note {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+  padding: 15px;
+  border-radius: 10px;
+  background: #fff7e8;
+  color: #8a4b00;
+}
+
+.review-pending-note mat-icon {
+  flex-shrink: 0;
+}
+
+.review-pending-note strong {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.review-pending-note p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 .decision-card {
   position: sticky;
   top: 20px;
@@ -114,6 +156,30 @@
   color: #667085;
 }
 
+.decision-completed-message {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 18px;
+  padding: 14px;
+  border-radius: 10px;
+  background: #ecfdf3;
+  color: #067647;
+}
+
+.decision-completed-message mat-icon {
+  flex-shrink: 0;
+}
+
+.decision-completed-message strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.decision-completed-message p {
+  margin: 0;
+  font-size: 13px;
+}
+
 .decision-options {
   display: flex;
   flex-direction: column;
@@ -122,13 +188,20 @@
 
 .decision-option {
   display: grid;
-  grid-template-columns: auto 32px 1fr;
+  grid-template-columns:
+    auto
+    32px
+    1fr;
   gap: 10px;
   align-items: center;
   padding: 15px;
   border: 1px solid #e5e7eb;
   border-radius: 11px;
   cursor: pointer;
+  transition:
+    border-color 150ms ease,
+    background 150ms ease,
+    opacity 150ms ease;
 }
 
 .decision-option--accept:hover {
@@ -139,6 +212,12 @@
 .decision-option--reject:hover {
   border-color: #b42318;
   background: #fff8f7;
+}
+
+.decision-option--disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  pointer-events: none;
 }
 
 .decision-option strong,
@@ -161,6 +240,7 @@
 }
 
 .form-error {
+  margin: 12px 0 0;
   color: #b42318;
   font-size: 13px;
 }
@@ -179,12 +259,15 @@
   display: flex;
   gap: 8px;
   margin: 15px 0 0 !important;
+  color: #667085;
   font-size: 12px;
+  line-height: 1.5;
 }
 
 .warning mat-icon {
   width: 17px;
   height: 17px;
+  flex-shrink: 0;
   font-size: 17px;
 }
 
@@ -197,6 +280,15 @@
 
 .error-card > mat-icon {
   color: #b42318;
+}
+
+.error-card h2 {
+  margin: 0 0 6px;
+}
+
+.error-card p {
+  margin: 0 0 16px;
+  color: #667085;
 }
 
 @media (max-width: 950px) {
