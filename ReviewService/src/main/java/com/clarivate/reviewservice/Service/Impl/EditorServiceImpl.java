@@ -142,8 +142,16 @@ public class EditorServiceImpl implements EditorService {
         /*
          * Prevent the editor from changing an existing final decision.
          */
+        System.out.println("========== REVIEW DEBUG ==========");
+        System.out.println("Review ID        : " + reviewProcess.getReviewId());
+        System.out.println("Review Status    : " + reviewProcess.getReviewStatus());
+        System.out.println("Recommendation   : " + reviewProcess.getReviewRecommendation());
+        System.out.println("Editor Decision  : '" + reviewProcess.getEditorDecision() + "'");
+        System.out.println("==================================");
         if (reviewProcess.getEditorDecision() != null
-                && !reviewProcess.getEditorDecision().isBlank()) {
+                && !reviewProcess.getEditorDecision().isBlank()
+                && !reviewProcess.getEditorDecision()
+                        .equalsIgnoreCase(EditorDecision.PENDING.toString())) {
             throw new IllegalStateException(
                     "A final editorial decision has already been submitted."
             );

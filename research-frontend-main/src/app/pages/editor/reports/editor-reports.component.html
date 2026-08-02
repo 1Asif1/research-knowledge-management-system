@@ -1,0 +1,162 @@
+<div class="reports-page">
+  <header class="page-header">
+    <div>
+      <h1>Reports</h1>
+
+      <p class="text-secondary">
+        Monitor the editorial workflow, reviewer activity and
+        publication outcomes.
+      </p>
+    </div>
+
+    <button
+      mat-stroked-button
+      type="button"
+      (click)="loadSummary()"
+      [disabled]="loading()"
+    >
+      <mat-icon>refresh</mat-icon>
+
+      {{ loading() ? 'Refreshing...' : 'Refresh' }}
+    </button>
+  </header>
+
+  <app-loading-spinner
+    *ngIf="loading()"
+    message="Loading editor reports..."
+  ></app-loading-spinner>
+
+  <section
+    *ngIf="!loading() && errorMessage()"
+    class="error-card card-surface"
+  >
+    <mat-icon>error_outline</mat-icon>
+
+    <div>
+      <h2>Could not load reports</h2>
+
+      <p>{{ errorMessage() }}</p>
+
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        (click)="loadSummary()"
+      >
+        Retry
+      </button>
+    </div>
+  </section>
+
+  <ng-container *ngIf="!loading() && !errorMessage() && summary() as data">
+    <section class="workflow-cards">
+      <article
+        *ngFor="let card of workflowCards()"
+        class="stat-card card-surface"
+      >
+        <div
+          class="stat-card__icon"
+          [attr.data-modifier]="card.modifier"
+        >
+          <mat-icon>{{ card.icon }}</mat-icon>
+        </div>
+
+        <div>
+          <span class="text-secondary">{{ card.label }}</span>
+          <strong>{{ card.value }}</strong>
+        </div>
+      </article>
+    </section>
+
+    <section class="card-surface recommendations-card">
+      <header class="section-header">
+        <div>
+          <h2>Recommendation Distribution</h2>
+          <p class="text-secondary">
+            Reviewer recommendations across your assigned reviews.
+          </p>
+        </div>
+      </header>
+
+      <div class="recommendations">
+        <div
+          *ngFor="let row of recommendationRows()"
+          class="recommendation-row"
+        >
+          <div class="recommendation-row__meta">
+            <span>{{ row.label }}</span>
+            <strong>{{ row.value }}</strong>
+          </div>
+
+          <div class="recommendation-row__bar">
+            <div
+              class="recommendation-row__bar-fill"
+              [attr.data-modifier]="row.modifier"
+              [style.width.%]="row.percent"
+            ></div>
+          </div>
+
+          <span class="recommendation-row__percent">
+            {{ row.percent }}%
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <section class="card-surface workload-card">
+      <header class="section-header">
+        <div>
+          <h2>Reviewer Workload</h2>
+          <p class="text-secondary">
+            Active reviewer assignments across your papers.
+          </p>
+        </div>
+      </header>
+
+      <div
+        *ngIf="reviewerWorkloads().length > 0; else emptyWorkload"
+        class="workload-table"
+      >
+        <div class="workload-table__header">
+          <span>Reviewer</span>
+          <span>Assigned</span>
+          <span>Completed</span>
+          <span>Pending</span>
+          <span>Workload Status</span>
+        </div>
+
+        <article
+          *ngFor="let workload of reviewerWorkloads()"
+          class="workload-table__row"
+        >
+          <span class="reviewer-cell">
+            <mat-icon>person</mat-icon>
+            {{ reviewerLabel(workload.reviewerId) }}
+          </span>
+
+          <span>{{ workload.assigned }}</span>
+          <span>{{ workload.completed }}</span>
+          <span>{{ workload.pending }}</span>
+
+          <span
+            class="workload-status"
+            [attr.data-status]="workloadStatusModifier(workload.pending)"
+          >
+            {{ workloadStatus(workload.pending) }}
+          </span>
+        </article>
+      </div>
+
+      <ng-template #emptyWorkload>
+        <div class="empty-state">
+          <mat-icon>groups</mat-icon>
+          <h3>No reviewer workloads</h3>
+          <p class="text-secondary">
+            Reviewer activity will appear here once reviewers are
+            assigned to your papers.
+          </p>
+        </div>
+      </ng-template>
+    </section>
+  </ng-container>
+</div>
