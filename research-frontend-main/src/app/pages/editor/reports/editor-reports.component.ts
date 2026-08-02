@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   OnInit,
   inject,
   signal
@@ -14,7 +15,6 @@ import { MatIconModule } from '@angular/material/icon';
 
 import { ReportService } from '@core/services/report.service';
 import {
-  PublishedPaperReportResponse,
   PublishedPaperSummaryResponse
 } from '@core/models';
 
@@ -32,20 +32,32 @@ import { LoadingSpinnerComponent } from
     LoadingSpinnerComponent
   ],
   templateUrl: './editor-reports.component.html',
-  styleUrl: './editor-reports.component.scss',
+  styleUrls: ['./editor-reports.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EditorReportsComponent implements OnInit {
   private readonly reportService = inject(ReportService);
 
-  // Published Paper Reports state
   readonly publishedPapers = signal<PublishedPaperSummaryResponse[]>([]);
   readonly selectedPaperId = signal<number | null>(null);
-  readonly publishedReport = signal<PublishedPaperReportResponse | null>(null);
+  readonly searchQuery = signal('');
   readonly loadingPublishedPapers = signal(false);
-  readonly loadingPublishedReport = signal(false);
   readonly downloadingPdf = signal(false);
   readonly publishedReportError = signal('');
+  readonly filteredPublishedPapers = computed(() => {
+    const query = this.searchQuery().trim().toLowerCase();
+    if (!query) {
+      return this.publishedPapers();
+    }
+
+    return this.publishedPapers().filter((paper) => {
+      const title = paper.title?.toLowerCase() ?? '';
+      const author = paper.authorName?.toLowerCase() ?? '';
+      const id = String(paper.paperId);
+
+      return title.includes(query) || author.includes(query) || id.includes(query);
+    });
+  });
 
   ngOnInit(): void {
     this.loadPublishedPapers();
@@ -57,10 +69,19 @@ export class EditorReportsComponent implements OnInit {
 
     this.reportService.getPublishedPapers().subscribe({
       next: (papers) => {
-        this.publishedPapers.set(papers || []);
+        const loadedPapers = papers || [];
+        this.publishedPapers.set(loadedPapers);
         this.loadingPublishedPapers.set(false);
-        if (papers && papers.length > 0 && !this.selectedPaperId()) {
-          this.selectPaper(papers[0].paperId);
+        if (loadedPapers.length === 0) {
+          this.selectedPaperId.set(null);
+          return;
+        }
+
+        const selectedPaperId = this.selectedPaperId();
+        const hasSelectedPaper = selectedPaperId !== null
+          && loadedPapers.some((paper) => paper.paperId === selectedPaperId);
+        if (!hasSelectedPaper) {
+          this.selectedPaperId.set(loadedPapers[0].paperId);
         }
       },
       error: (err: HttpErrorResponse) => {
@@ -71,24 +92,13 @@ export class EditorReportsComponent implements OnInit {
     });
   }
 
+  updateSearchQuery(value: string): void {
+    this.searchQuery.set(value);
+  }
+
   selectPaper(paperId: number): void {
     if (!paperId) return;
     this.selectedPaperId.set(paperId);
-    this.loadingPublishedReport.set(true);
-    this.publishedReportError.set('');
-
-    this.reportService.getPublishedPaperReport(paperId).subscribe({
-      next: (report) => {
-        this.publishedReport.set(report);
-        this.loadingPublishedReport.set(false);
-      },
-      error: (err: HttpErrorResponse) => {
-        console.error('Failed to load published paper report:', err);
-        this.publishedReport.set(null);
-        this.publishedReportError.set(this.resolveErrorMessage(err));
-        this.loadingPublishedReport.set(false);
-      }
-    });
   }
 
   downloadPdfReport(): void {

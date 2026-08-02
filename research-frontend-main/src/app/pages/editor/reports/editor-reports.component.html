@@ -3,231 +3,75 @@
     <div>
       <h1>Published Paper Reports</h1>
       <p class="text-secondary">
-        Generate and download audit reports for published papers detailing completion time, status history, and submitted versions.
+        Search, scroll, and select a published paper to download its report.
       </p>
     </div>
   </header>
 
-  <!-- Published Paper Selection Section -->
-  <section class="card-surface paper-selector-card">
-    <div class="selector-header">
-      <div>
-        <h2>Select Published Paper</h2>
-        <p class="text-secondary">
-          Choose a published paper to view its full publication timeline, status transitions, version history, and download as PDF.
-        </p>
-      </div>
-
-      <button
-        mat-stroked-button
-        type="button"
-        (click)="loadPublishedPapers()"
-        [disabled]="loadingPublishedPapers()"
-      >
-        <mat-icon>refresh</mat-icon>
-        Refresh List
-      </button>
-    </div>
-
-    <app-loading-spinner
-      *ngIf="loadingPublishedPapers()"
-      message="Fetching published papers..."
-    ></app-loading-spinner>
-
-    <div
-      *ngIf="!loadingPublishedPapers() && publishedPapers().length > 0"
-      class="paper-picker-wrapper"
-    >
-      <label for="paper-select" class="picker-label">Choose Published Paper:</label>
-      <div class="select-container">
-        <select
-          id="paper-select"
-          class="paper-select-input"
-          [ngModel]="selectedPaperId()"
-          (ngModelChange)="selectPaper($event)"
-        >
-          <option
-            *ngFor="let paper of publishedPapers()"
-            [value]="paper.paperId"
-          >
-            {{ paper.title }} — {{ paper.authorName }} (Published: {{ paper.publishedDate | date:'mediumDate' }})
-          </option>
-        </select>
-        <mat-icon class="select-icon">expand_more</mat-icon>
-      </div>
-    </div>
-
-    <div
-      *ngIf="!loadingPublishedPapers() && publishedPapers().length === 0"
-      class="empty-state"
-    >
-      <mat-icon>search_off</mat-icon>
-      <h3>No Published Papers Found</h3>
-      <p class="text-secondary">
-        No published papers are available in the system yet. Reports will appear once papers are published.
-      </p>
-    </div>
-  </section>
-
-  <!-- Report Error -->
-  <section
-    *ngIf="publishedReportError()"
-    class="error-card card-surface"
-  >
+  <section *ngIf="publishedReportError()" class="error-card card-surface">
     <mat-icon>error_outline</mat-icon>
     <div>
-      <h2>Could not load report</h2>
+      <h2>Could not load papers</h2>
       <p>{{ publishedReportError() }}</p>
-      <button
-        mat-flat-button
-        color="primary"
-        type="button"
-        (click)="loadPublishedPapers()"
-      >
+      <button mat-flat-button color="primary" type="button" (click)="loadPublishedPapers()">
         Retry
       </button>
     </div>
   </section>
 
-  <!-- Report Loading Spinner -->
-  <app-loading-spinner
-    *ngIf="loadingPublishedReport()"
-    message="Generating paper publication report..."
-  ></app-loading-spinner>
-
-  <!-- Detailed Published Paper Report Display -->
-  <ng-container *ngIf="!loadingPublishedReport() && publishedReport() as report">
-    <section class="card-surface report-header-card">
-      <div class="report-title-area">
-        <span class="published-badge">
-          <mat-icon>verified</mat-icon>
-          PUBLISHED REPORT
-        </span>
-        <h2>{{ report.title }}</h2>
-        <p class="author-line">
-          <strong>Author:</strong> {{ report.authorName }}
-          <span *ngIf="report.coAuthors && report.coAuthors.length > 0">
-            | <strong>Co-Authors:</strong> {{ report.coAuthors.join(', ') }}
-          </span>
-        </p>
+  <section class="card-surface picker-card">
+    <div class="picker-toolbar">
+      <div class="search-box">
+        <mat-icon>search</mat-icon>
+        <input
+          type="search"
+          placeholder="Search by title, author, or paper ID"
+          [ngModel]="searchQuery()"
+          (ngModelChange)="updateSearchQuery($event)"
+        />
       </div>
 
+      <button mat-stroked-button type="button" (click)="loadPublishedPapers()" [disabled]="loadingPublishedPapers()">
+        <mat-icon>refresh</mat-icon>
+        Refresh
+      </button>
+    </div>
+
+    <app-loading-spinner *ngIf="loadingPublishedPapers()" message="Fetching published papers..."></app-loading-spinner>
+
+    <div *ngIf="!loadingPublishedPapers() && publishedPapers().length > 0" class="paper-list">
       <button
-        mat-flat-button
-        color="primary"
         type="button"
-        class="download-pdf-btn"
-        (click)="downloadPdfReport()"
-        [disabled]="downloadingPdf()"
+        class="paper-item"
+        *ngFor="let paper of filteredPublishedPapers()"
+        [class.paper-item--selected]="selectedPaperId() === paper.paperId"
+        (click)="selectPaper(paper.paperId)"
       >
+        <span class="paper-item__title">{{ paper.title }}</span>
+        <span class="paper-item__meta">
+          #{{ paper.paperId }} · {{ paper.authorName }} · {{ paper.publishedDate | date:'mediumDate' }}
+        </span>
+      </button>
+
+      <div *ngIf="filteredPublishedPapers().length === 0" class="list-empty text-secondary">
+        No papers match your search.
+      </div>
+    </div>
+
+    <div *ngIf="!loadingPublishedPapers() && publishedPapers().length === 0" class="empty-state">
+      <mat-icon>search_off</mat-icon>
+      <h3>No Published Papers Found</h3>
+      <p class="text-secondary">
+        Reports will appear once papers are published.
+      </p>
+    </div>
+    <div class="picker-actions">
+      <span class="text-secondary" *ngIf="selectedPaperId() as id">Selected Paper #{{ id }}</span>
+      <span class="text-secondary" *ngIf="!selectedPaperId()">Select a paper to continue</span>
+      <button mat-flat-button color="primary" type="button" (click)="downloadPdfReport()" [disabled]="!selectedPaperId() || downloadingPdf()">
         <mat-icon>picture_as_pdf</mat-icon>
         {{ downloadingPdf() ? 'Generating PDF...' : 'Download PDF Report' }}
       </button>
-    </section>
-
-    <!-- Key Metrics Cards -->
-    <section class="report-metrics-grid">
-      <article class="metric-card metric-card--time">
-        <div class="metric-icon">
-          <mat-icon>timer</mat-icon>
-        </div>
-        <div>
-          <span class="metric-label">Time to Complete Publication</span>
-          <strong class="metric-value">{{ report.completionTimeFormatted }}</strong>
-          <span class="metric-sub">
-            {{ report.submittedDate | date:'mediumDate' }} &rarr; {{ report.publishedDate | date:'mediumDate' }}
-          </span>
-        </div>
-      </article>
-
-      <article class="metric-card metric-card--versions">
-        <div class="metric-icon">
-          <mat-icon>history_edu</mat-icon>
-        </div>
-        <div>
-          <span class="metric-label">Versions Submitted</span>
-          <strong class="metric-value">{{ report.totalVersionsSubmitted }} {{ report.totalVersionsSubmitted === 1 ? 'Version' : 'Versions' }}</strong>
-          <span class="metric-sub">Total paper iterations uploaded</span>
-        </div>
-      </article>
-
-      <article class="metric-card metric-card--status">
-        <div class="metric-icon">
-          <mat-icon>fact_check</mat-icon>
-        </div>
-        <div>
-          <span class="metric-label">Publication Status</span>
-          <strong class="metric-value status-badge-pub">{{ report.status }}</strong>
-          <span class="metric-sub">{{ report.statusHistory.length }} workflow steps recorded</span>
-        </div>
-      </article>
-    </section>
-
-    <!-- Submitted Paper Versions Section -->
-    <section class="card-surface versions-section">
-      <header class="section-header">
-        <div>
-          <h2>Submitted Versions Breakdown</h2>
-          <p class="text-secondary">
-            Review all versions submitted by the author during the publication workflow.
-          </p>
-        </div>
-      </header>
-
-      <div class="versions-table">
-        <div class="versions-table__header">
-          <span>Version</span>
-          <span>File Name</span>
-          <span>Change Summary / Notes</span>
-          <span>Upload Date</span>
-        </div>
-
-        <article
-          *ngFor="let ver of report.versions"
-          class="versions-table__row"
-        >
-          <span class="version-badge">Version {{ ver.versionNumber }}</span>
-          <span class="file-cell">
-            <mat-icon>description</mat-icon>
-            {{ ver.fileName }}
-          </span>
-          <span>{{ ver.changeSummary || 'Initial submission' }}</span>
-          <span>{{ ver.uploadedDate | date:'medium' }}</span>
-        </article>
-      </div>
-    </section>
-
-    <!-- Complete Status History & Audit Trail -->
-    <section class="card-surface history-section">
-      <header class="section-header">
-        <div>
-          <h2>Paper Status Transition History</h2>
-          <p class="text-secondary">
-            Complete audit trail of every status transition from initial submission to final publication.
-          </p>
-        </div>
-      </header>
-
-      <div class="timeline-container">
-        <div
-          *ngFor="let item of report.statusHistory; let isLast = last"
-          class="timeline-item"
-        >
-          <div class="timeline-marker">
-            <div class="timeline-dot"></div>
-            <div *ngIf="!isLast" class="timeline-line"></div>
-          </div>
-
-          <div class="timeline-content">
-            <div class="timeline-header">
-              <span class="timeline-action">{{ item.action }}</span>
-              <span class="timeline-date">{{ item.actionDate | date:'medium' }}</span>
-            </div>
-            <p class="timeline-performer"><strong>Performed By:</strong> {{ item.performedBy }}</p>
-            <p class="timeline-remarks">{{ item.remarks }}</p>
-          </div>
-        </div>
-      </div>
-    </section>
-  </ng-container>
+    </div>
+  </section>
 </div>
