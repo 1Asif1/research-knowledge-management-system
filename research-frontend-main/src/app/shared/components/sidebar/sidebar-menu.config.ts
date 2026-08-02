@@ -106,8 +106,6 @@ export const SIDEBAR_MENUS: Record<Role, SidebarMenuItem[]> = {
   [Role.ADMIN]: [
     { label: 'Dashboard', route: '/admin/dashboard', exact: true, icon: 'dashboard' },
     { label: 'Papers', route: '/admin/papers', icon: 'folder' },
-    { label: 'Reports', route: '/admin/reports', icon: 'assessment' },
-    { label: 'Notifications', route: '/admin/notifications', icon: 'notifications' },
     { label: 'Manage Users', route: '/admin/users', icon: 'group' },
     { label: 'Profile', route: '/admin/profile', icon: 'person' }
   ]

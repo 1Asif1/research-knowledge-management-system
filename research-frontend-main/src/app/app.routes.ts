@@ -119,18 +119,8 @@ export const routes: Routes = [
             loadComponent: () => import('@pages/papers/papers-page.component').then((m) => m.PapersPageComponent)
           },
           {
-            path: 'reports',
-            loadComponent: () => import('@pages/reports/reports-page.component').then((m) => m.ReportsPageComponent)
-          },
-          {
             path: 'users',
             loadComponent: () => import('@pages/users/users-page.component').then((m) => m.UsersPageComponent)
-          },
-          {
-            path: 'notifications',
-            loadComponent: () =>
-              import('./features/notifications/notifications.component')
-                .then(m => m.NotificationsComponent)
           },
           {
             path: 'profile',

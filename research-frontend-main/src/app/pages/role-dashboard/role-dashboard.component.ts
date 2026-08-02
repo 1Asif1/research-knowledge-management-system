@@ -63,8 +63,6 @@ export class RoleDashboardComponent {
       case Role.ADMIN:
         return [
           { title: 'Research Papers', description: 'Browse, upload, and track submission status.', route: `${base}/papers` },
-          { title: 'Reports & Analytics', description: 'Publication trends and performance metrics.', route: `${base}/reports` },
-          { title: 'Notifications', description: '2 unread', route: `${base}/notifications` },
           { title: 'Manage Users', description: 'Roles, permissions, journals, categories.', route: `${base}/users` }
         ];
       case Role.EDITOR:

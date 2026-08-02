@@ -171,7 +171,6 @@ export class PaperDetailsComponent implements OnInit, OnDestroy {
           }
         ];
       case 'APPROVED':
-      case 'SENT_TO_PUBLICATION':
         return [
           submittedStep,
           {
@@ -183,6 +182,20 @@ export class PaperDetailsComponent implements OnInit, OnDestroy {
             label: 'Approved',
             state: 'current',
             icon: 'verified'
+          }
+        ];
+      case 'SENT_TO_PUBLICATION':
+        return [
+          submittedStep,
+          {
+            label: 'Reviewer Assigned',
+            state: 'completed',
+            icon: 'person_search'
+          },
+          {
+            label: 'Published',
+            state: 'completed',
+            icon: 'workspace_premium'
           }
         ];
       case 'REJECTED':

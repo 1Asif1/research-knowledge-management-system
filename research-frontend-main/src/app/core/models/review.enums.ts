@@ -43,7 +43,7 @@ export function reviewStatusLabel(status: ReviewStatus | string | null | undefin
     case ReviewStatus.RESUBMITTED: return 'Resubmitted';
     case ReviewStatus.APPROVED: return 'Approved';
     case ReviewStatus.REJECTED: return 'Rejected';
-    case ReviewStatus.SENT_TO_PUBLICATION: return 'Sent to Publication';
+    case ReviewStatus.SENT_TO_PUBLICATION: return 'Published';
     default: return status ?? '—';
   }
 }
