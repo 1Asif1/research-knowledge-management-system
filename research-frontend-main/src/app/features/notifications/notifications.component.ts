@@ -314,15 +314,37 @@ export class NotificationsComponent implements OnInit {
     }
   }
 
-  private resolveActionUrl(role: Role, type: BackendNotificationType): string {
+  private resolveActionUrl(
+    role: Role,
+    type: BackendNotificationType
+  ): string {
     if (role === Role.REVIEWER) {
-      return type === BackendNotificationType.REVIEW_ASSIGNED
-        ? '/reviewer/assigned-papers'
-        : '/reviewer/dashboard';
+      switch (type) {
+        case BackendNotificationType.REVIEW_ASSIGNED:
+          return '/reviewer/assigned-papers';
+
+        case BackendNotificationType.REVIEW_COMPLETED:
+          return '/reviewer/reviewed-papers';
+
+        default:
+          return '/reviewer/dashboard';
+      }
     }
 
     if (role === Role.EDITOR) {
-      return '/editor/reviews';
+      switch (type) {
+        case BackendNotificationType.REVIEW_COMPLETED:
+          return '/editor/decisions';
+
+        case BackendNotificationType.PAPER_SUBMITTED:
+          return '/editor/papers';
+
+        case BackendNotificationType.PAPER_PUBLISHED:
+          return '/editor/published-papers';
+
+        default:
+          return '/editor/dashboard';
+      }
     }
 
     if (role === Role.ADMIN) {

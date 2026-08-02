@@ -16,21 +16,41 @@ import com.clarivate.reviewservice.Repository.ReviewProcessRepository;
 import com.clarivate.reviewservice.Service.ResearcherService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class ResearcherServiceImpl implements ResearcherService {
     private final PaperSubmissionRepository paperSubmissionRepository;
     private final ReviewProcessRepository reviewProcessRepository;
     private final PaperVersionRepository paperVersionRepository;
     private final ReviewHistoryRepository reviewHistoryRepository;
+
+    private final RestTemplate restTemplate = new RestTemplate();
+
+    @Value("${user-service.url:http://localhost:8081}")
+    private String userServiceUrl;
+
+    @Value("${notification-service.url:http://localhost:8084}")
+    private String notificationServiceUrl;
 
     @Override
     public PaperSubmissionResponse submitPaper(SubmitPaperRequest request) {
@@ -71,6 +91,8 @@ public class ResearcherServiceImpl implements ResearcherService {
                 .actionDate(LocalDateTime.now())
                 .build();
         reviewHistoryRepository.save(history);
+
+        notifyEditorsOfPaperSubmission(paper);
 
         return mapToResponse(paper);
     }
@@ -114,6 +136,8 @@ public class ResearcherServiceImpl implements ResearcherService {
                 .build();
         reviewHistoryRepository.save(history);
 
+        notifyEditorOfRevision(reviewProcess, paper, nextVersionNumber);
+
         return mapToResponse(paper);
     }
 
@@ -148,5 +172,126 @@ public class ResearcherServiceImpl implements ResearcherService {
                 .reviewStatus(reviewProcess != null ? reviewProcess.getReviewStatus() : null)
                 .currentVersion(reviewProcess != null ? reviewProcess.getCurrentVersion() : null)
                 .build();
+    }
+
+    private void notifyEditorsOfPaperSubmission(PaperSubmission paper) {
+        List<Long> editorIds = fetchEditorUserIds();
+
+        if (editorIds.isEmpty()) {
+            log.warn(
+                    "PAPER_SUBMITTED notification skipped: no EDITOR users resolved for paper {}",
+                    paper.getPaperId()
+            );
+            return;
+        }
+
+        String title = "New Paper Submitted";
+        String message = "A researcher submitted \""
+                + paper.getTitle()
+                + "\" for editorial review.";
+
+        for (Long editorId : editorIds) {
+            sendNotification(editorId, title, message, "PAPER_SUBMITTED");
+        }
+    }
+
+    private void notifyEditorOfRevision(
+            ReviewProcess reviewProcess,
+            PaperSubmission paper,
+            int versionNumber
+    ) {
+        long editorId = reviewProcess.getEditorId();
+
+        if (editorId <= 0) {
+            log.warn(
+                    "REVISION_REQUESTED notification skipped: review {} has no assigned editorId",
+                    reviewProcess.getReviewId()
+            );
+            return;
+        }
+
+        sendNotification(
+                editorId,
+                "Paper Revision Submitted",
+                "The researcher uploaded version "
+                        + versionNumber
+                        + " of \""
+                        + paper.getTitle()
+                        + "\" for re-review.",
+                "REVISION_REQUESTED"
+        );
+    }
+
+    private List<Long> fetchEditorUserIds() {
+        try {
+            ResponseEntity<UserDirectoryEntry[]> response =
+                    restTemplate.getForEntity(
+                            userServiceUrl + "/users",
+                            UserDirectoryEntry[].class
+                    );
+
+            UserDirectoryEntry[] users = response.getBody();
+            if (users == null) {
+                return Collections.emptyList();
+            }
+
+            return Arrays.stream(users)
+                    .filter(u -> u.role != null
+                            && "EDITOR".equalsIgnoreCase(u.role))
+                    .map(u -> u.id)
+                    .filter(id -> id != null && id > 0)
+                    .collect(Collectors.toList());
+        } catch (Exception ex) {
+            log.warn("Failed to fetch editors from user-service", ex);
+            return Collections.emptyList();
+        }
+    }
+
+    private void sendNotification(
+            Long userId,
+            String title,
+            String message,
+            String type
+    ) {
+        Map<String, Object> body = new HashMap<>();
+
+        body.put("userId", userId);
+        body.put("title", title);
+        body.put("message", message);
+        body.put("type", type);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        HttpEntity<Map<String, Object>> request =
+                new HttpEntity<>(body, headers);
+
+        try {
+            restTemplate.postForEntity(
+                    notificationServiceUrl + "/notifications",
+                    request,
+                    Object.class
+            );
+
+            log.info(
+                    "Editor notification created for editorId={}, type={}",
+                    userId,
+                    type
+            );
+        } catch (Exception ex) {
+            log.warn(
+                    "Failed to create editor notification for editorId={}, type={}",
+                    userId,
+                    type,
+                    ex
+            );
+        }
+    }
+
+    private static final class UserDirectoryEntry {
+        public Long id;
+        public String firstName;
+        public String lastName;
+        public String role;
     }
 }

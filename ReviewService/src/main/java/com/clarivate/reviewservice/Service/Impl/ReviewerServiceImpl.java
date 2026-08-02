@@ -180,9 +180,28 @@ public class ReviewerServiceImpl implements ReviewerService {
         sendResearcherNotification(
                 reviewProcess,
                 "Review Recommendation Submitted",
-                "A reviewer submitted a " + request.getRecommendation()
-                        + " recommendation for \"" + resolvePaperTitle(reviewProcess.getPaperId()) + "\".",
-                "REVIEW_COMPLETED");
+                "A reviewer submitted a "
+                        + request.getRecommendation()
+                        + " recommendation for \""
+                        + resolvePaperTitle(
+                                reviewProcess.getPaperId()
+                        )
+                        + "\".",
+                "REVIEW_COMPLETED"
+        );
+
+        sendEditorNotification(
+                reviewProcess,
+                "Review Completed",
+                "The reviewer submitted a "
+                        + request.getRecommendation()
+                        + " recommendation for \""
+                        + resolvePaperTitle(
+                                reviewProcess.getPaperId()
+                        )
+                        + "\". A final editorial decision is required.",
+                "REVIEW_COMPLETED"
+        );
 
         return mapReviewToResponse(updatedReview);
     }
@@ -357,6 +376,75 @@ public class ReviewerServiceImpl implements ReviewerService {
             restTemplate.postForEntity(notificationServiceUrl + "/notifications", request, Object.class);
         } catch (Exception ex) {
             log.warn("Failed to send review notification for paper {}", reviewProcess.getPaperId(), ex);
+        }
+    }
+
+    private void sendEditorNotification(
+            ReviewProcess reviewProcess,
+            String title,
+            String message,
+            String type
+    ) {
+        long editorId = reviewProcess.getEditorId();
+
+        if (editorId <= 0) {
+            editorId = reviewerAssignmentRepository
+                    .findByReviewProcessReviewId(reviewProcess.getReviewId())
+                    .stream()
+                    .findFirst()
+                    .map(ReviewerAssignment::getAssignedByEditorId)
+                    .orElse(0L);
+
+            if (editorId > 0) {
+                log.info(
+                        "Recovered editorId={} for review {} from ReviewerAssignment",
+                        editorId,
+                        reviewProcess.getReviewId()
+                );
+            }
+        }
+
+        if (editorId <= 0) {
+            log.warn(
+                    "Editor notification skipped because review {} has invalid editorId={}",
+                    reviewProcess.getReviewId(),
+                    editorId
+            );
+            return;
+        }
+
+        Map<String, Object> body = new HashMap<>();
+
+        body.put("userId", editorId);
+        body.put("title", title);
+        body.put("message", message);
+        body.put("type", type);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        HttpEntity<Map<String, Object>> request =
+                new HttpEntity<>(body, headers);
+
+        try {
+            restTemplate.postForEntity(
+                    notificationServiceUrl + "/notifications",
+                    request,
+                    Object.class
+            );
+
+            log.info(
+                    "Editor notification created for editorId={}, reviewId={}",
+                    editorId,
+                    reviewProcess.getReviewId()
+            );
+        } catch (Exception exception) {
+            log.warn(
+                    "Failed to create editor notification for editorId={}, reviewId={}",
+                    editorId,
+                    reviewProcess.getReviewId(),
+                    exception
+            );
         }
     }
 }

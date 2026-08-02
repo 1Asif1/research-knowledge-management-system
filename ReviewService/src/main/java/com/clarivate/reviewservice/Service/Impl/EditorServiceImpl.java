@@ -205,6 +205,22 @@ public class EditorServiceImpl implements EditorService {
 
         reviewHistoryRepository.save(history);
 
+        String editorNotificationType =
+                decision == EditorDecision.ACCEPT
+                        ? "PAPER_APPROVED"
+                        : "PAPER_REJECTED";
+
+        sendNotification(
+                reviewProcess.getEditorId(),
+                "Final Decision Recorded",
+                "You submitted a "
+                        + decision
+                        + " decision for \""
+                        + resolvePaperTitle(reviewProcess.getPaperId())
+                        + "\".",
+                editorNotificationType
+        );
+
         return mapToResponse(updatedReview);
     }
 
