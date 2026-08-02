@@ -52,7 +52,9 @@
 
       <span>Pending Assignment</span>
 
-      <strong>{{ counts().pendingAssignment }}</strong>
+      <strong>
+        {{ counts().pendingAssignment }}
+      </strong>
     </button>
 
     <button
@@ -82,7 +84,9 @@
 
       <span>Awaiting Decision</span>
 
-      <strong>{{ counts().awaitingDecision }}</strong>
+      <strong>
+        {{ counts().awaitingDecision }}
+      </strong>
     </button>
 
     <button
@@ -98,6 +102,21 @@
       <span>Accepted</span>
 
       <strong>{{ counts().accepted }}</strong>
+    </button>
+
+    <button
+      type="button"
+      class="workflow-card card-surface"
+      [class.workflow-card--active]="
+        selectedFilter() === 'PUBLISHED'
+      "
+      (click)="updateFilter('PUBLISHED')"
+    >
+      <mat-icon>workspace_premium</mat-icon>
+
+      <span>Published</span>
+
+      <strong>{{ counts().published }}</strong>
     </button>
 
     <button
@@ -167,6 +186,10 @@
 
         <mat-option value="ACCEPTED">
           Accepted
+        </mat-option>
+
+        <mat-option value="PUBLISHED">
+          Published
         </mat-option>
 
         <mat-option value="REJECTED">
@@ -279,7 +302,9 @@
       <span>
         {{
           review.editorDecision
-            ? formatValue(review.editorDecision)
+            ? formatValue(
+                review.editorDecision
+              )
             : 'Pending'
         }}
       </span>

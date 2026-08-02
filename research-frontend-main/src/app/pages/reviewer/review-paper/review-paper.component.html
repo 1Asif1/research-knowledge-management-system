@@ -286,10 +286,26 @@
 
               <mat-error
                 *ngIf="
+                  commentForm.controls.comment.hasError('whitespace')
+                "
+              >
+                Comment cannot contain only whitespace.
+              </mat-error>
+
+              <mat-error
+                *ngIf="
                   commentForm.controls.comment.hasError('minlength')
                 "
               >
-                Enter at least 10 characters.
+                Enter at least 20 characters.
+              </mat-error>
+
+              <mat-error
+                *ngIf="
+                  commentForm.controls.comment.hasError('maxlength')
+                "
+              >
+                Comment cannot exceed 3000 characters.
               </mat-error>
             </mat-form-field>
 

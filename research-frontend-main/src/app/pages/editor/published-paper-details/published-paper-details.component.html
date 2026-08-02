@@ -1,0 +1,165 @@
+<div class="published-detail-page">
+  <button
+    mat-button
+    type="button"
+    class="back-button"
+    (click)="goBack()"
+  >
+    <mat-icon>arrow_back</mat-icon>
+    Published Papers
+  </button>
+
+  <app-loading-spinner
+    *ngIf="loading()"
+    message="Loading published paper..."
+  ></app-loading-spinner>
+
+  <section
+    *ngIf="!loading() && errorMessage()"
+    class="error-card card-surface"
+  >
+    <mat-icon>error_outline</mat-icon>
+
+    <div>
+      <h2>Could not load publication</h2>
+
+      <p>{{ errorMessage() }}</p>
+
+      <button
+        mat-stroked-button
+        type="button"
+        (click)="goBack()"
+      >
+        Return to Published Papers
+      </button>
+    </div>
+  </section>
+
+  <ng-container
+    *ngIf="
+      !loading() &&
+      !errorMessage() &&
+      publication() &&
+      paper()
+    "
+  >
+    <header class="publication-header card-surface">
+      <div class="publication-header__icon">
+        <mat-icon>workspace_premium</mat-icon>
+      </div>
+
+      <div class="publication-header__content">
+        <span class="publication-label">
+          Published Paper
+        </span>
+
+        <h1>
+          {{ paper()?.title }}
+        </h1>
+
+        <div class="publication-meta">
+          <span>
+            Paper #{{ publication()?.paperId }}
+          </span>
+
+          <span>
+            Publication #{{ publication()?.id }}
+          </span>
+
+          <span>
+            Published
+            {{
+              formatDate(
+                publication()!.publishedDate
+              )
+            }}
+          </span>
+        </div>
+      </div>
+
+      <span class="published-badge">
+        <mat-icon>verified</mat-icon>
+        Published
+      </span>
+    </header>
+
+    <section class="paper-details card-surface">
+      <h2>Paper Details</h2>
+
+      <div class="details-grid">
+        <div class="detail-item">
+          <span>Title</span>
+
+          <strong>
+            {{ paper()?.title }}
+          </strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Author</span>
+
+          <strong>
+            {{
+            paper()?.authorName ||
+            'Not available'
+            }}
+          </strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Status</span>
+
+          <strong class="published-text">
+            {{
+            formatValue(
+            paper()?.status
+            )
+            }}
+          </strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Published Date</span>
+
+          <strong>
+            {{
+            formatDate(
+            publication()!.publishedDate
+            )
+            }}
+          </strong>
+        </div>
+
+        <div class="detail-item detail-item--full">
+          <span>Description / Abstract</span>
+
+          <p>
+            {{
+            paper()?.description ||
+            'No description is available.'
+            }}
+          </p>
+        </div>
+
+        <div
+          class="detail-item detail-item--full"
+          *ngIf="
+            paper()?.coAuthors?.length
+          "
+        >
+          <span>Co-authors</span>
+
+          <div class="co-authors">
+            <span
+              *ngFor="
+                let coAuthor of paper()?.coAuthors
+              "
+            >
+              {{ coAuthor }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </ng-container>
+</div>

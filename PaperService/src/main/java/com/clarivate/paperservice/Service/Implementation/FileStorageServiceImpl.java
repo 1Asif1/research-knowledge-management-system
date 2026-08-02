@@ -5,6 +5,7 @@ import com.clarivate.paperservice.Repository.StoredFileRepository;
 import com.clarivate.paperservice.Service.Interface.FileStorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -34,6 +35,7 @@ public class FileStorageServiceImpl implements FileStorageService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public byte[] loadFile(String fileNameOrPath) throws IOException {
         for (String key : buildLookupKeys(fileNameOrPath)) {
             var stored = storedFileRepository.findByFileName(key);

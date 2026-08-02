@@ -13,6 +13,8 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import {
   FormBuilder,
   ReactiveFormsModule,
+  ValidationErrors,
+  ValidatorFn,
   Validators
 } from '@angular/forms';
 
@@ -103,8 +105,8 @@ export class ReviewPaperComponent implements OnInit, OnDestroy {
       '',
       [
         Validators.required,
-        Validators.minLength(10),
-        Validators.maxLength(3000)
+        this.nonWhitespaceValidator(),
+        this.trimmedLengthValidator(20, 3000)
       ]
     ]
   });
@@ -338,9 +340,9 @@ export class ReviewPaperComponent implements OnInit, OnDestroy {
         console.error('Failed to add comment:', error);
 
         this.snackBar.open(
-          'Unable to add the comment.',
+          this.extractBackendMessage(error, 'Unable to add the comment.'),
           'Close',
-          { duration: 4000 }
+          { duration: 5000 }
         );
 
         this.submittingComment.set(false);
@@ -387,9 +389,9 @@ export class ReviewPaperComponent implements OnInit, OnDestroy {
           );
 
           this.snackBar.open(
-            'Unable to submit the recommendation.',
+            this.extractBackendMessage(error, 'Unable to submit the recommendation.'),
             'Close',
-            { duration: 4000 }
+            { duration: 5000 }
           );
 
           this.submittingRecommendation.set(false);
@@ -459,5 +461,51 @@ export class ReviewPaperComponent implements OnInit, OnDestroy {
       ? 'Current version content is not available yet.'
       : 'Unable to load the current paper version.');
     this.loadingContent.set(false);
+  }
+
+  private nonWhitespaceValidator(): ValidatorFn {
+    return (control): ValidationErrors | null => {
+      const value = (control.value ?? '') as string;
+      if (value.length === 0) {
+        return null;
+      }
+      return value.trim().length === 0 ? { whitespace: true } : null;
+    };
+  }
+
+  private trimmedLengthValidator(min: number, max: number): ValidatorFn {
+    return (control): ValidationErrors | null => {
+      const value = ((control.value ?? '') as string).trim();
+      if (value.length === 0) {
+        return null;
+      }
+      if (value.length < min) {
+        return { minlength: { requiredLength: min, actualLength: value.length } };
+      }
+      if (value.length > max) {
+        return { maxlength: { requiredLength: max, actualLength: value.length } };
+      }
+      return null;
+    };
+  }
+
+  private extractBackendMessage(error: unknown, fallback: string): string {
+    const err = error as {
+      error?: {
+        message?: string;
+        fieldErrors?: Array<{ field?: string; message?: string }>;
+      };
+    } | null;
+    const payload = err?.error;
+    if (payload?.fieldErrors?.length) {
+      return payload.fieldErrors
+        .map((fe) => (fe.field ? `${fe.field}: ${fe.message}` : fe.message))
+        .filter((msg): msg is string => !!msg)
+        .join(' ');
+    }
+    if (payload?.message) {
+      return payload.message;
+    }
+    return fallback;
   }
 }

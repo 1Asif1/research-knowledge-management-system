@@ -83,7 +83,8 @@ public class PaperServiceImpl implements PaperService {
 
     @Override
     public void changeStatus(Long id, String status) {
-        Paper paper = findPaperOrThrow(id);
+        Paper paper = findPaperForReviewerOrThrow(id)
+                .orElseThrow(this::notFound);
         paper.setStatus(PaperStatus.valueOf(status));
         paperRepository.save(paper);
     }

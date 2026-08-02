@@ -18,11 +18,16 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 
 import { EditorService } from '@core/services/editor.service';
+import { PaperService } from '@core/services/paper.service';
 import { TokenStorageService } from '@core/services/token-storage.service';
-import { ReviewProcessResponse } from '@core/models';
+
+import {
+  PublicationResponse,
+  ReviewProcessResponse
+} from '@core/models';
 
 import { LoadingSpinnerComponent } from
-  '@shared/components/loading-spinner/loading-spinner.component';
+    '@shared/components/loading-spinner/loading-spinner.component';
 
 type EditorPaperFilter =
   | 'ALL'
@@ -30,6 +35,7 @@ type EditorPaperFilter =
   | 'UNDER_REVIEW'
   | 'AWAITING_DECISION'
   | 'ACCEPTED'
+  | 'PUBLISHED'
   | 'REJECTED';
 
 @Component({
@@ -52,19 +58,47 @@ type EditorPaperFilter =
 })
 export class EditorPapersComponent implements OnInit {
   private readonly editorService = inject(EditorService);
+  private readonly paperService = inject(PaperService);
   private readonly tokenStorage = inject(TokenStorageService);
 
   readonly loading = signal(true);
   readonly errorMessage = signal('');
 
-  readonly pendingReviews = signal<ReviewProcessResponse[]>([]);
-  readonly assignedReviews = signal<ReviewProcessResponse[]>([]);
+  readonly pendingReviews =
+    signal<ReviewProcessResponse[]>([]);
+
+  readonly assignedReviews =
+    signal<ReviewProcessResponse[]>([]);
+
+  readonly publications =
+    signal<PublicationResponse[]>([]);
 
   readonly searchTerm = signal('');
-  readonly selectedFilter = signal<EditorPaperFilter>('ALL');
 
+  readonly selectedFilter =
+    signal<EditorPaperFilter>('ALL');
+
+  /**
+   * A fast lookup containing every published PaperService paper ID.
+   *
+   * PublicationResponse.paperId must match
+   * ReviewProcessResponse.paperId for this lookup to work.
+   */
+  readonly publishedPaperIds = computed(() => {
+    return new Set(
+      this.publications().map(
+        (publication) => publication.paperId
+      )
+    );
+  });
+
+  /**
+   * Pending and assigned endpoints may return the same review.
+   * The Map removes duplicate reviews using reviewId.
+   */
   readonly allReviews = computed(() => {
-    const reviewsById = new Map<number, ReviewProcessResponse>();
+    const reviewsById =
+      new Map<number, ReviewProcessResponse>();
 
     for (const review of this.pendingReviews()) {
       reviewsById.set(review.reviewId, review);
@@ -78,7 +112,9 @@ export class EditorPapersComponent implements OnInit {
   });
 
   readonly filteredReviews = computed(() => {
-    const search = this.searchTerm().trim().toLowerCase();
+    const search =
+      this.searchTerm().trim().toLowerCase();
+
     const filter = this.selectedFilter();
 
     return this.allReviews()
@@ -104,7 +140,9 @@ export class EditorPapersComponent implements OnInit {
           this.getWorkflowLabel(review)
             .toLowerCase()
             .includes(search) ||
-          this.formatValue(review.reviewerRecommendation)
+          this.formatValue(
+            review.reviewerRecommendation
+          )
             .toLowerCase()
             .includes(search) ||
           this.formatValue(review.editorDecision)
@@ -112,12 +150,11 @@ export class EditorPapersComponent implements OnInit {
             .includes(search)
         );
       })
-      .sort((first, second) => {
-        return (
+      .sort(
+        (first, second) =>
           this.getWorkflowPriority(first) -
           this.getWorkflowPriority(second)
-        );
-      });
+      );
   });
 
   readonly counts = computed(() => {
@@ -134,7 +171,8 @@ export class EditorPapersComponent implements OnInit {
 
       underReview: reviews.filter(
         (review) =>
-          this.getWorkflowKey(review) === 'UNDER_REVIEW'
+          this.getWorkflowKey(review) ===
+          'UNDER_REVIEW'
       ).length,
 
       awaitingDecision: reviews.filter(
@@ -146,6 +184,11 @@ export class EditorPapersComponent implements OnInit {
       accepted: reviews.filter(
         (review) =>
           this.getWorkflowKey(review) === 'ACCEPTED'
+      ).length,
+
+      published: reviews.filter(
+        (review) =>
+          this.getWorkflowKey(review) === 'PUBLISHED'
       ).length,
 
       rejected: reviews.filter(
@@ -166,6 +209,7 @@ export class EditorPapersComponent implements OnInit {
       this.errorMessage.set(
         'Unable to identify the logged-in editor.'
       );
+
       this.loading.set(false);
       return;
     }
@@ -174,16 +218,32 @@ export class EditorPapersComponent implements OnInit {
     this.errorMessage.set('');
 
     forkJoin({
-      pending: this.editorService.getPendingReviews(),
-      assigned: this.editorService.getAssignedReviews(user.id)
+      pending:
+        this.editorService.getPendingReviews(),
+
+      assigned:
+        this.editorService.getAssignedReviews(user.id),
+
+      publications:
+        this.paperService.getAllPublications()
     }).subscribe({
-      next: ({ pending, assigned }) => {
-        this.pendingReviews.set(pending);
-        this.assignedReviews.set(assigned);
+      next: ({
+               pending,
+               assigned,
+               publications
+             }) => {
+        this.pendingReviews.set(pending ?? []);
+        this.assignedReviews.set(assigned ?? []);
+        this.publications.set(publications ?? []);
+
         this.loading.set(false);
       },
+
       error: (error) => {
-        console.error('Failed to load editor papers:', error);
+        console.error(
+          'Failed to load editor papers:',
+          error
+        );
 
         this.errorMessage.set(
           'Unable to load papers. Please try again.'
@@ -207,7 +267,17 @@ export class EditorPapersComponent implements OnInit {
     this.selectedFilter.set('ALL');
   }
 
-  getPaperTitle(review: ReviewProcessResponse): string {
+  isPublished(
+    review: ReviewProcessResponse
+  ): boolean {
+    return this.publishedPaperIds().has(
+      review.paperId
+    );
+  }
+
+  getPaperTitle(
+    review: ReviewProcessResponse
+  ): string {
     return (
       review.paperTitle?.trim() ||
       `Paper #${review.paperId}`
@@ -217,6 +287,17 @@ export class EditorPapersComponent implements OnInit {
   getWorkflowKey(
     review: ReviewProcessResponse
   ): EditorPaperFilter {
+    /**
+     * Publication must be checked before ACCEPTED.
+     *
+     * A published review still has editorDecision = ACCEPT,
+     * so checking ACCEPT first would incorrectly show
+     * "Publish Paper" again.
+     */
+    if (this.isPublished(review)) {
+      return 'PUBLISHED';
+    }
+
     const decision = this.normaliseValue(
       review.editorDecision
     );
@@ -256,6 +337,9 @@ export class EditorPapersComponent implements OnInit {
       case 'ACCEPTED':
         return 'Accepted';
 
+      case 'PUBLISHED':
+        return 'Published';
+
       case 'REJECTED':
         return 'Rejected';
 
@@ -280,6 +364,9 @@ export class EditorPapersComponent implements OnInit {
       case 'ACCEPTED':
         return 'status--accepted';
 
+      case 'PUBLISHED':
+        return 'status--published';
+
       case 'REJECTED':
         return 'status--rejected';
 
@@ -300,6 +387,9 @@ export class EditorPapersComponent implements OnInit {
 
       case 'ACCEPTED':
         return 'Publish Paper';
+
+      case 'PUBLISHED':
+        return 'View Published';
 
       case 'REJECTED':
         return 'View Decision';
@@ -322,6 +412,9 @@ export class EditorPapersComponent implements OnInit {
 
       case 'ACCEPTED':
         return 'publish';
+
+      case 'PUBLISHED':
+        return 'visibility';
 
       case 'REJECTED':
         return 'visibility';
@@ -348,6 +441,19 @@ export class EditorPapersComponent implements OnInit {
           review.reviewId
         ];
 
+      case 'PUBLISHED':
+        /**
+         * This currently opens the Editor Published Papers list.
+         *
+         * Later, after creating a dedicated publication-details
+         * component, this can route to:
+         *
+         * /editor/published-papers/{publicationId}
+         */
+        return [
+          '/editor/published-papers'
+        ];
+
       case 'AWAITING_DECISION':
       case 'REJECTED':
       case 'UNDER_REVIEW':
@@ -360,7 +466,10 @@ export class EditorPapersComponent implements OnInit {
   }
 
   formatValue(value: unknown): string {
-    if (value === null || value === undefined) {
+    if (
+      value === null ||
+      value === undefined
+    ) {
       return 'Not available';
     }
 
@@ -381,12 +490,19 @@ export class EditorPapersComponent implements OnInit {
       .join(' ');
   }
 
-  private normaliseValue(value: unknown): string {
-    if (value === null || value === undefined) {
+  private normaliseValue(
+    value: unknown
+  ): string {
+    if (
+      value === null ||
+      value === undefined
+    ) {
       return '';
     }
 
-    return String(value).trim().toUpperCase();
+    return String(value)
+      .trim()
+      .toUpperCase();
   }
 
   private getWorkflowPriority(
@@ -405,11 +521,14 @@ export class EditorPapersComponent implements OnInit {
       case 'ACCEPTED':
         return 4;
 
-      case 'REJECTED':
+      case 'PUBLISHED':
         return 5;
 
-      default:
+      case 'REJECTED':
         return 6;
+
+      default:
+        return 7;
     }
   }
 }

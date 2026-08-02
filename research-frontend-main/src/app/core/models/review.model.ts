@@ -73,6 +73,8 @@ export interface ReviewCommentRequest {
 
 export interface ReviewCommentResponse {
   commentId: number;
+  reviewId?: number | null;
+  versionId?: number | null;
   reviewerId: number;
   comment: string;
   createdDate: string;

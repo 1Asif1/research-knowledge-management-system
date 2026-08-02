@@ -92,11 +92,17 @@ public class ReviewerServiceImpl implements ReviewerService {
 
         PaperVersion paperVersion = resolveCommentVersion(reviewProcess, request.getVersionId());
 
+        String trimmedComment = request.getComment() == null ? "" : request.getComment().trim();
+        if (trimmedComment.length() < 20 || trimmedComment.length() > 3000) {
+            throw new BadRequestException(
+                    "Comment must be between 20 and 3000 characters (excluding leading/trailing whitespace).");
+        }
+
         ReviewComment comment = ReviewComment.builder()
                 .reviewProcess(reviewProcess)
                 .paperVersion(paperVersion)
                 .reviewerId(request.getReviewerId())
-                .comment(request.getComment())
+                .comment(trimmedComment)
                 .createdDate(LocalDateTime.now())
                 .build();
 
@@ -308,6 +314,12 @@ public class ReviewerServiceImpl implements ReviewerService {
     ) {
         return ReviewCommentResponse.builder()
                 .commentId(comment.getCommentId())
+                .reviewId(comment.getReviewProcess() != null
+                        ? comment.getReviewProcess().getReviewId()
+                        : null)
+                .versionId(comment.getPaperVersion() != null
+                        ? comment.getPaperVersion().getVersionId()
+                        : null)
                 .reviewerId(comment.getReviewerId())
                 .comment(comment.getComment())
                 .createdDate(comment.getCreatedDate())

@@ -12,6 +12,7 @@ import com.clarivate.paperservice.Service.Interface.PaperVersionService;
 import com.clarivate.paperservice.Util.FileUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -93,6 +94,7 @@ public class PaperVersionServiceImpl implements PaperVersionService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public PaperDownloadResponse downloadPaperVersion(Long paperId, Integer versionNumber) {
         Paper paper = findPaperForReviewerOrThrow(paperId);
         PaperVersion paperVersion = resolvePaperVersion(paper.getId(), versionNumber);

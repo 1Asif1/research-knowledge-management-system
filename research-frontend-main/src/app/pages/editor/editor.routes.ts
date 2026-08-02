@@ -87,6 +87,18 @@ export const EDITOR_ROUTES: Routes = [
     }
   },
   {
+    path: 'published-papers/:publicationId',
+    loadComponent: () =>
+      import(
+        './published-paper-details/published-paper-details.component'
+        ).then(
+        (m) => m.PublishedPaperDetailsComponent
+      ),
+    data: {
+      breadcrumb: 'Published Paper'
+    }
+  },
+  {
     path: 'profile',
     loadComponent: () =>
       import('@shared/components/profile/profile.component').then(

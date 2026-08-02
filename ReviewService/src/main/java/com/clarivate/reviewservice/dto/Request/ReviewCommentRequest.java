@@ -2,6 +2,7 @@ package com.clarivate.reviewservice.dto.Request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 
 @Getter
@@ -10,12 +11,14 @@ import lombok.*;
 @NoArgsConstructor
 @Builder
 public class ReviewCommentRequest {
-    @NotNull
+    @NotNull(message = "reviewId is required")
     private Long reviewId;
-    @NotNull
+    @NotNull(message = "versionId is required")
     private Long versionId;
-    @NotNull
+    @NotNull(message = "reviewerId is required")
     private Long reviewerId;
-    @NotBlank
+    @NotBlank(message = "Comment is required")
+    @Size(min = 20, max = 3000,
+            message = "Comment must be between 20 and 3000 characters")
     private String comment;
 }
