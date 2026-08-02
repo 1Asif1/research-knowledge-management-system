@@ -21,6 +21,7 @@ services:
     build:
       context: .
       dockerfile: userservice/Dockerfile
+    image: ${DOCKER_USERNAME:-yourusername}/rkms-userservice:latest
     container_name: rkms-userservice
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/RKMSNEW
@@ -36,6 +37,7 @@ services:
     build:
       context: .
       dockerfile: AuthServiceD/Dockerfile
+    image: ${DOCKER_USERNAME:-yourusername}/rkms-authservice:latest
     container_name: rkms-authservice
     environment:
       USER_SERVICE_URL: http://userservice:8081
@@ -49,6 +51,7 @@ services:
     build:
       context: .
       dockerfile: notificationservice/Dockerfile
+    image: ${DOCKER_USERNAME:-yourusername}/rkms-notificationservice:latest
     container_name: rkms-notificationservice
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/RKMSNEW
@@ -64,6 +67,7 @@ services:
     build:
       context: .
       dockerfile: PaperService/Dockerfile
+    image: ${DOCKER_USERNAME:-yourusername}/rkms-paperservice:latest
     container_name: rkms-paperservice
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/RKMSNEW
@@ -85,6 +89,7 @@ services:
     build:
       context: .
       dockerfile: ReviewService/Dockerfile
+    image: ${DOCKER_USERNAME:-yourusername}/rkms-reviewservice:latest
     container_name: rkms-reviewservice
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/RKMSNEW
@@ -101,6 +106,7 @@ services:
     build:
       context: .
       dockerfile: ReportService/Dockerfile
+    image: ${DOCKER_USERNAME:-yourusername}/rkms-reportservice:latest
     container_name: rkms-reportservice
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/RKMSNEW
@@ -116,6 +122,7 @@ services:
     build:
       context: .
       dockerfile: api-gateway/Dockerfile
+    image: ${DOCKER_USERNAME:-yourusername}/rkms-api-gateway:latest
     container_name: rkms-api-gateway
     environment:
       AUTH_SERVICE_URL: http://authservice:8082
@@ -139,6 +146,7 @@ services:
     build:
       context: .
       dockerfile: research-frontend-main/Dockerfile
+    image: ${DOCKER_USERNAME:-yourusername}/rkms-frontend:latest
     container_name: rkms-frontend
     ports:
       - "4200:80"
