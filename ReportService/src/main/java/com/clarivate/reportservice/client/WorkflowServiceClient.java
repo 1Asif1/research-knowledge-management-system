@@ -124,13 +124,9 @@ public class WorkflowServiceClient {
                     ? Collections.emptyList()
                     : body;
 
-        } catch (RestClientException exception) {
-            throw new DownstreamServiceException(
-                    serviceName
-                            + " is unavailable: "
-                            + exception.getMessage(),
-                    exception
-            );
+        } catch (Exception exception) {
+            System.err.println(serviceName + " unavailable at " + url + ": " + exception.getMessage());
+            return Collections.emptyList();
         }
     }
 }

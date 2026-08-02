@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, output } f
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { TokenStorageService } from '@core/services/token-storage.service';
+import { Role } from '@core/models';
 import { SIDEBAR_MENUS } from './sidebar-menu.config';
 
 @Component({
@@ -23,6 +24,8 @@ export class SidebarComponent {
 
   readonly menuItems = computed(() => {
     const user = this.tokenStorage.user();
-    return user ? SIDEBAR_MENUS[user.role] : [];
+    if (!user || !user.role) return [];
+    const roleKey = String(user.role).toUpperCase() as Role;
+    return SIDEBAR_MENUS[roleKey] || SIDEBAR_MENUS[user.role] || [];
   });
 }

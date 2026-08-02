@@ -25,12 +25,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +53,9 @@ public class ResearcherServiceImpl implements ResearcherService {
 
     @Value("${notification-service.url:http://localhost:8084}")
     private String notificationServiceUrl;
+
+    @Value("${user-service.url:http://localhost:8081}")
+    private String userServiceUrl;
 
     @Override
     public PaperSubmissionResponse submitPaper(SubmitPaperRequest request) {
